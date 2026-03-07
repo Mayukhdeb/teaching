@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blur–Sharpen · Turing Patterns</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+
+  :root {
+    --bg:#ffffff;--bg2:#f7f8fb;--border:#e2e6ef;--border2:#cdd3e0;
+    --text:#111827;--blue:#5b8dee;--blue-lt:#dce8fc;--blue-mid:#a8c4f5;
+    --muted:#8492a6;--pc1:#d94f4f;--pc2:#3aaa72;--pc1-lt:#fde8e8;--pc2-lt:#d8f5e8;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.6;min-height:100vh;}
+
+  .page-header{border-bottom:1px solid var(--border);padding:32px 48px 26px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;}
+  .page-header h1{font-family:'Libre Baskerville',serif;font-size:1.75rem;font-weight:700;letter-spacing:-0.01em;}
+  .page-header .subtitle{font-size:13px;color:var(--muted);font-style:italic;font-family:'Libre Baskerville',serif;}
+
+  .container{max-width:960px;margin:0 auto;padding:32px 32px 80px;}
+
+  .card{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+  .card-top{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:flex-start;gap:16px;}
+  .step-num{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);background:var(--blue-lt);border:1px solid var(--blue-mid);border-radius:4px;padding:3px 9px;white-space:nowrap;flex-shrink:0;margin-top:3px;}
+  .card-top h2{font-family:'Libre Baskerville',serif;font-size:1rem;font-weight:700;}
+  .card-top p{font-size:12.5px;color:var(--muted);margin-top:1px;font-weight:300;}
+  .card-body{padding:24px;background:var(--bg);}
+
+  .main-layout{display:grid;grid-template-columns:1fr 260px;gap:24px;align-items:start;}
+  @media(max-width:700px){.main-layout{grid-template-columns:1fr;}}
+
+  .canvas-single{ width:100%; }
+  .canvas-single .canvas-wrap{ border-radius:8px 8px 0 0; cursor:crosshair; }
+  .canvas-block{display:flex;flex-direction:column;}
+  .canvas-wrap{border:1px solid var(--border);border-radius:8px 8px 0 0;overflow:hidden;background:#111;}
+  .canvas-wrap canvas{display:block;width:100%;image-rendering:pixelated;}
+  .canvas-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:5px 8px;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;background:var(--bg2);text-align:center;}
+
+  .controls{display:flex;flex-direction:column;gap:11px;}
+  .ctrl-block{border:1px solid var(--border);border-radius:8px;padding:13px 15px;background:var(--bg2);}
+  .ctrl-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+  .ctrl-label span{color:var(--blue);}
+
+  input[type=range]{width:100%;-webkit-appearance:none;height:2px;background:var(--border2);border-radius:2px;outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(91,141,238,0.3);}
+
+  .btn-row{display:flex;gap:7px;}
+  .btn{flex:1;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.05em;padding:8px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--bg);color:var(--text);cursor:pointer;transition:all 0.14s;text-align:center;white-space:nowrap;}
+  .btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt);}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .btn.primary:hover{opacity:0.87;}
+  .btn.danger{border-color:#e8b4b4;color:var(--pc1);background:var(--bg);}
+  .btn.danger:hover{background:var(--pc1-lt);}
+
+  .stats-row{display:flex;gap:8px;}
+  .stat{flex:1;text-align:center;border:1px solid var(--border);border-radius:6px;padding:9px 6px;background:var(--bg);}
+  .stat-val{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;color:var(--blue);}
+  .stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-top:2px;}
+
+  .progress-wrap{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:8px;}
+  .progress-fill{height:100%;background:var(--blue);border-radius:2px;transition:width 0.15s ease;width:0%;}
+
+  .insight{border-left:3px solid var(--blue-mid);padding:10px 13px;background:var(--blue-lt);border-radius:0 6px 6px 0;font-size:12.5px;color:#2d3a50;line-height:1.65;font-style:italic;}
+  .insight strong{font-style:normal;color:var(--text);font-weight:500;}
+  .insight.warn{border-left-color:#e8c06a;background:#fdf8ec;color:#4a3a12;}
+  .insight.ok{border-left-color:#3aaa72;background:var(--pc2-lt);color:#1a4030;}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Blur–Sharpen Iteration</h1>
+  <span class="subtitle">bilinear downsample → upsample → unsharp mask · Turing patterns</span>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-top">
+      <div class="step-num">Live</div>
+      <div>
+        <h2>Iterative blur &amp; sharpen · grayscale</h2>
+        <p>Each step: bilinear downsample by factor → upsample back (blur) → apply unsharp mask (sharpen). Noise injected every step.</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="main-layout">
+
+        <!-- Canvas -->
+        <div class="canvas-single">
+          <div class="canvas-wrap"><canvas id="cvCurrent" width="128" height="128"></canvas></div>
+          <div class="canvas-label" style="cursor:default;">current · drag to inject noise</div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+
+          <div class="btn-row">
+            <button class="btn primary" id="runBtn" onclick="toggleRun()">▶ Run</button>
+            <button class="btn danger"  onclick="resetSim()">↺ Reset</button>
+          </div>
+
+          <div class="ctrl-block">
+            <div class="stats-row">
+              <div class="stat"><div class="stat-val" id="iterVal">0</div><div class="stat-lbl">Steps</div></div>
+              <div class="stat"><div class="stat-val" id="lossVal">—</div><div class="stat-lbl">RMS Δ</div></div>
+            </div>
+            <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
+          </div>
+
+          <div class="ctrl-block">
+            <div class="ctrl-label">ITERS / SECOND <span id="speedVal">30</span></div>
+            <input type="range" id="speedSlider" min="1" max="60" step="1" value="30" oninput="updateSpeed()">
+          </div>
+
+          <div class="ctrl-block">
+            <div class="ctrl-label">DOWNSAMPLE FACTOR <span id="factorVal">0.25</span></div>
+            <input type="range" id="factorSlider" min="0.05" max="0.95" step="0.01" value="0.25" oninput="updateFactor()">
+            <div style="margin-top:5px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)">small → fine patterns · large → coarse patterns</div>
+          </div>
+
+          <div class="ctrl-block">
+            <div class="ctrl-label">UNSHARP RADIUS <span id="radiusVal">2.0</span></div>
+            <input type="range" id="radiusSlider" min="0.5" max="8" step="0.5" value="2" oninput="updateRadius()">
+          </div>
+
+          <div class="ctrl-block">
+            <div class="ctrl-label">UNSHARP STRENGTH <span id="strengthVal">1.50</span></div>
+            <input type="range" id="strengthSlider" min="0.1" max="4" step="0.05" value="1.5" oninput="updateStrength()">
+          </div>
+
+          <div class="ctrl-block">
+            <div class="ctrl-label">NOISE AMP <span id="noiseVal">0.010</span></div>
+            <input type="range" id="noiseSlider" min="0" max="0.1" step="0.001" value="0.01" oninput="updateNoise()">
+          </div>
+
+          <div class="insight" id="mainInsight">
+            Press <strong>Run</strong>. Repeated blur–sharpen cycles at a fixed scale nucleate Turing-like patterns.
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════
+//  State — flat Float32Array [SIZE*SIZE], values in [0,1]
+// ═══════════════════════════════════
+const SIZE = 128;
+let grid = null;           // current image
+let blurred = null;        // after blur
+let sharpened = null;      // after unsharp mask
+
+let running = false;
+let animFrame = null;
+let lastTime = 0;
+let accTime = 0;
+let iterCount = 0;
+let currentRMS = 0;
+
+let downsampleFactor = 0.25;
+let unsharpRadius    = 2.0;
+let unsharpStrength  = 1.5;   // percent/100 equivalent
+let noiseAmp         = 0.01;
+let targetIPS        = 30;
+
+// ═══════════════════════════════════
+//  Init
+// ═══════════════════════════════════
+function initNoise() {
+  grid = new Float32Array(SIZE * SIZE);
+  for (let i = 0; i < grid.length; i++) grid[i] = Math.random();
+  blurred = null; sharpened = null;
+}
+
+// ═══════════════════════════════════
+//  Bilinear resample — flat [h*w] grayscale
+// ═══════════════════════════════════
+function resampleBilinear(src, sh, sw, dh, dw) {
+  const dst = new Float32Array(dh * dw);
+  for (let dy = 0; dy < dh; dy++) {
+    for (let dx = 0; dx < dw; dx++) {
+      const nx = dw > 1 ? dx / (dw - 1) : 0.5;
+      const ny = dh > 1 ? dy / (dh - 1) : 0.5;
+      const px = nx * (sw - 1), py = ny * (sh - 1);
+      const x0 = Math.floor(px) | 0, y0 = Math.floor(py) | 0;
+      const x1 = Math.min(x0 + 1, sw - 1), y1 = Math.min(y0 + 1, sh - 1);
+      const fx = px - x0, fy = py - y0;
+      dst[dy * dw + dx] =
+        src[y0 * sw + x0] * (1-fx) * (1-fy) +
+        src[y0 * sw + x1] *    fx  * (1-fy) +
+        src[y1 * sw + x0] * (1-fx) *    fy  +
+        src[y1 * sw + x1] *    fx  *    fy;
+    }
+  }
+  return dst;
+}
+
+// ═══════════════════════════════════
+//  Unsharp mask
+//  sharpened = blurred + strength * (blurred - gaussian(blurred))
+//  We approximate gaussian with a separable box blur of radius r.
+// ═══════════════════════════════════
+function gaussianBlur(src, w, h, radius) {
+  // Separable box blur, 3 passes approximate Gaussian
+  const passes = 3;
+  let buf = src.slice();
+  const tmp = new Float32Array(w * h);
+  const r = Math.max(1, Math.round(radius));
+
+  for (let pass = 0; pass < passes; pass++) {
+    // Horizontal
+    for (let y = 0; y < h; y++) {
+      let sum = 0, count = 0;
+      // Init window
+      for (let kx = 0; kx <= r && kx < w; kx++) { sum += buf[y*w+kx]; count++; }
+      for (let x = 0; x < w; x++) {
+        tmp[y*w+x] = sum / count;
+        const add = x + r + 1; if (add < w) { sum += buf[y*w+add]; count++; }
+        const rem = x - r;     if (rem >= 0) { sum -= buf[y*w+rem]; count--; }
+      }
+    }
+    // Vertical
+    for (let x = 0; x < w; x++) {
+      let sum = 0, count = 0;
+      for (let ky = 0; ky <= r && ky < h; ky++) { sum += tmp[ky*w+x]; count++; }
+      for (let y = 0; y < h; y++) {
+        buf[y*w+x] = sum / count;
+        const add = y + r + 1; if (add < h) { sum += tmp[add*w+x]; count++; }
+        const rem = y - r;     if (rem >= 0) { sum -= tmp[rem*w+x]; count--; }
+      }
+    }
+  }
+  return buf;
+}
+
+function unsharpMask(src, w, h, radius, strength) {
+  const smooth = gaussianBlur(src, w, h, radius);
+  const dst = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    // sharpened = original + strength * (original - smooth)  →  clamp [0,1]
+    dst[i] = Math.max(0, Math.min(1, src[i] + strength * (src[i] - smooth[i])));
+  }
+  return dst;
+}
+
+// ═══════════════════════════════════
+//  One blur–sharpen cycle (matches Python)
+//    small    = resize(current, factor)        [bilinear]
+//    blurred  = resize(small, original_size)   [bilinear]
+//    sharpened = unsharpMask(blurred)
+// ═══════════════════════════════════
+function step() {
+  const sw = Math.max(1, Math.round(SIZE * downsampleFactor));
+  const sh = Math.max(1, Math.round(SIZE * downsampleFactor));
+
+  const small   = resampleBilinear(grid, SIZE, SIZE, sh, sw);
+  blurred       = resampleBilinear(small, sh, sw, SIZE, SIZE);
+  sharpened     = unsharpMask(blurred, SIZE, SIZE, unsharpRadius, unsharpStrength);
+
+  // RMS change
+  let rms = 0;
+  for (let i = 0; i < SIZE*SIZE; i++) rms += (sharpened[i] - grid[i]) ** 2;
+  currentRMS = Math.sqrt(rms / (SIZE * SIZE));
+
+  // Advance
+  grid = sharpened.slice();
+
+  // Inject noise
+  if (noiseAmp > 0)
+    for (let i = 0; i < grid.length; i++)
+      grid[i] = Math.max(0, Math.min(1, grid[i] + (Math.random() - 0.5) * 2 * noiseAmp));
+
+  iterCount++;
+}
+
+// ═══════════════════════════════════
+//  Rendering
+// ═══════════════════════════════════
+function drawGray(id, data, w, h) {
+  const cv = document.getElementById(id);
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d');
+  const img = ctx.createImageData(w, h);
+  // Auto-normalise for display
+  let mn = Infinity, mx = -Infinity;
+  for (let i = 0; i < data.length; i++) { if (data[i] < mn) mn = data[i]; if (data[i] > mx) mx = data[i]; }
+  const rng = (mx - mn) || 1;
+  for (let i = 0; i < w * h; i++) {
+    const v = Math.round(((data[i] - mn) / rng) * 255);
+    img.data[i*4] = img.data[i*4+1] = img.data[i*4+2] = v;
+    img.data[i*4+3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function renderAll() {
+  if (!grid) return;
+  drawGray('cvCurrent', grid, SIZE, SIZE);
+}
+
+// ═══════════════════════════════════
+//  UI
+// ═══════════════════════════════════
+function updateUI() {
+  document.getElementById('iterVal').textContent = iterCount;
+  document.getElementById('lossVal').textContent = currentRMS > 0 ? currentRMS.toFixed(4) : '—';
+  document.getElementById('progressFill').style.width = Math.min(100, iterCount / 600 * 100) + '%';
+
+  const ins = document.getElementById('mainInsight');
+  if (iterCount === 0) {
+    ins.className = 'insight';
+    ins.innerHTML = `Press <strong>Run</strong>. Bilinear blur at factor <strong>${downsampleFactor}</strong>, then unsharp mask.`;
+  } else if (iterCount < 10) {
+    ins.className = 'insight warn';
+    ins.innerHTML = `Initialising… RMS Δ: <strong>${currentRMS.toFixed(4)}</strong>`;
+  } else if (currentRMS < 1e-7) {
+    ins.className = 'insight ok';
+    ins.innerHTML = `<strong>Converged.</strong> RMS Δ ≈ ${currentRMS.toExponential(2)}. Try changing the downsample factor.`;
+    stop();
+  } else {
+    ins.className = 'insight';
+    ins.innerHTML = `Patterns at blur scale <strong>${downsampleFactor}</strong> · unsharp r=<strong>${unsharpRadius}</strong>. RMS Δ: <strong>${currentRMS.toFixed(4)}</strong>`;
+  }
+}
+
+// ═══════════════════════════════════
+//  Loop
+// ═══════════════════════════════════
+function loop(ts) {
+  if (!running) return;
+  const dt = Math.min(ts - lastTime, 100);
+  lastTime = ts; accTime += dt;
+  const msPer = 1000 / targetIPS;
+  let n = 0;
+  while (accTime >= msPer && n < 6) { step(); accTime -= msPer; n++; }
+  if (n > 0) { renderAll(); updateUI(); }
+  animFrame = requestAnimationFrame(loop);
+}
+function start() {
+  if (running) return; running = true; lastTime = performance.now(); accTime = 0;
+  document.getElementById('runBtn').textContent = '⏸ Pause';
+  document.getElementById('runBtn').className = 'btn danger';
+  animFrame = requestAnimationFrame(loop);
+}
+function stop() {
+  running = false;
+  document.getElementById('runBtn').textContent = '▶ Run';
+  document.getElementById('runBtn').className = 'btn primary';
+  if (animFrame) cancelAnimationFrame(animFrame);
+}
+function toggleRun() { if (running) stop(); else start(); }
+function resetSim() {
+  stop(); iterCount = 0; currentRMS = 0; accTime = 0;
+  initNoise(); renderAll(); updateUI();
+}
+
+// ═══════════════════════════════════
+//  Sliders
+// ═══════════════════════════════════
+function updateSpeed()   { targetIPS = +document.getElementById('speedSlider').value; document.getElementById('speedVal').textContent = targetIPS; }
+function updateNoise()   { noiseAmp = +document.getElementById('noiseSlider').value; document.getElementById('noiseVal').textContent = noiseAmp.toFixed(3); }
+function updateRadius()  { unsharpRadius = +document.getElementById('radiusSlider').value; document.getElementById('radiusVal').textContent = unsharpRadius.toFixed(1); if(grid){step();renderAll();updateUI();} }
+function updateStrength(){ unsharpStrength = +document.getElementById('strengthSlider').value; document.getElementById('strengthVal').textContent = unsharpStrength.toFixed(2); if(grid){step();renderAll();updateUI();} }
+function updateFactor()  {
+  downsampleFactor = +document.getElementById('factorSlider').value;
+  document.getElementById('factorVal').textContent = downsampleFactor.toFixed(2);
+  if (grid) { step(); renderAll(); updateUI(); }
+}
+
+// ═══════════════════════════════════
+//  Canvas interaction — paint noise on click/drag
+// ═══════════════════════════════════
+const BRUSH_RADIUS = 8;
+let isPainting = false;
+
+function paintAt(e) {
+  if (!grid) return;
+  const cv = document.getElementById('cvCurrent');
+  const rect = cv.getBoundingClientRect();
+  const cx = (e.clientX - rect.left) / rect.width  * SIZE;
+  const cy = (e.clientY - rect.top)  / rect.height * SIZE;
+  const r = BRUSH_RADIUS;
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx*dx + dy*dy > r*r) continue;
+      const px = Math.round(cx + dx), py = Math.round(cy + dy);
+      if (px < 0 || px >= SIZE || py < 0 || py >= SIZE) continue;
+      grid[py * SIZE + px] = Math.max(0, Math.min(1,
+        grid[py * SIZE + px] + (Math.random() - 0.5) * 0.8
+      ));
+    }
+  }
+  renderAll();
+}
+
+document.getElementById('cvCurrent').addEventListener('mousedown', e => { isPainting = true; paintAt(e); });
+document.addEventListener('mousemove', e => { if (isPainting) paintAt(e); });
+document.addEventListener('mouseup',   () => isPainting = false);
+// Touch support
+document.getElementById('cvCurrent').addEventListener('touchstart', e => { isPainting = true; paintAt(e.touches[0]); e.preventDefault(); }, {passive:false});
+document.addEventListener('touchmove',  e => { if (isPainting) paintAt(e.touches[0]); }, {passive:false});
+document.addEventListener('touchend',   () => isPainting = false);
+initNoise(); renderAll(); updateUI();
+</script>
+</body>
+</html>
