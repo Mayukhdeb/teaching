@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overcomplete Dictionaries & Sparse Coding</title>
+<link rel="stylesheet" href="https://edwardtufte.github.io/et-book/et-book.css">
+<style>
+  html { font-size: 15px; }
+
+  body {
+    background: #fffff8;
+    color: #111;
+    font-family: et-book, Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  .content {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 4rem 2rem 8rem;
+  }
+
+  /* ── Typography ── */
+  h1 {
+    font-weight: 400;
+    font-style: italic;
+    font-size: 3rem;
+    line-height: 1.08;
+    margin-top: 3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    font-style: italic;
+    font-size: 1.3rem;
+    color: #666;
+    margin-top: 0.6rem;
+    margin-bottom: 0;
+  }
+
+  .back {
+    font-size: 1rem;
+    color: #aaa;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 2.5rem;
+  }
+  .back:hover { color: #111; }
+
+  hr {
+    border: none;
+    border-top: 1px solid #e0e0d8;
+    margin: 3.5rem 0;
+  }
+
+  h2 {
+    font-weight: 400;
+    font-style: italic;
+    font-size: 2rem;
+    line-height: 1.1;
+    margin-top: 3.5rem;
+    margin-bottom: 0;
+  }
+
+  .section-num {
+    font-size: 0.85rem;
+    color: #bbb;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 3.5rem;
+    margin-bottom: 0.3rem;
+    font-style: normal;
+  }
+
+  p {
+    font-size: 1.35rem;
+    line-height: 2rem;
+    margin-top: 1.3rem;
+    margin-bottom: 0;
+  }
+
+  /* ── Math ── */
+  .math {
+    font-style: italic;
+    font-size: 1.25rem;
+    color: #444;
+    text-align: center;
+    margin: 1.8rem 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Callout ── */
+  .callout {
+    border-left: 2px solid #bbb;
+    padding: 0.5rem 1rem;
+    margin: 1.8rem 0;
+    color: #555;
+    font-size: 1.2rem;
+    line-height: 1.75;
+    font-style: italic;
+  }
+  .callout strong { color: #111; font-style: normal; }
+
+  /* ── Demo box ── */
+  .demo {
+    margin: 2rem 0;
+    border: 1px solid #ddd;
+    background: #fafaf2;
+    overflow: hidden;
+  }
+
+  .demo-label {
+    font-size: 0.82rem;
+    color: #aaa;
+    padding: 0.4rem 1rem;
+    border-bottom: 1px solid #e8e8e0;
+    background: #f4f4eb;
+    font-style: italic;
+    letter-spacing: 0.01em;
+  }
+
+  .demo-body { padding: 1.2rem 1.4rem 1.4rem; }
+
+  canvas { display: block; width: 100%; }
+
+  /* ── Controls ── */
+  .ctrl {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    margin-top: 0.9rem;
+  }
+
+  .ctrl label {
+    font-size: 1rem;
+    color: #777;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-style: italic;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 110px;
+    height: 2px;
+    background: #ccc;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: #555;
+    cursor: pointer;
+  }
+
+  .val { font-size: 1rem; color: #aaa; min-width: 32px; font-style: italic; }
+
+  button {
+    font-family: et-book, Georgia, serif;
+    font-style: italic;
+    font-size: 1rem;
+    background: transparent;
+    color: #777;
+    border: 1px solid #ccc;
+    padding: 0.2rem 0.8rem;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  button:hover { color: #111; border-color: #888; }
+  button.on { color: #111; border-color: #111; }
+
+  .note {
+    font-size: 0.95rem;
+    color: #aaa;
+    font-style: italic;
+    margin-top: 0.7rem;
+    line-height: 1.5;
+  }
+
+  /* ── Two col ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+  @media (max-width: 500px) { .two-col { grid-template-columns: 1fr; } }
+  .mlabel { font-size: 0.85rem; color: #aaa; font-style: italic; margin-bottom: 0.4rem; }
+
+  /* ── Nav row ── */
+  .nav-row { display: flex; gap: 0.8rem; align-items: center; margin-top: 1.2rem; }
+  .nav-row em { font-size: 0.95rem; color: #aaa; margin-left: 0.5rem; }
+
+  /* ── Atom grid ── */
+  .atom-grid { display: flex; flex-wrap: wrap; gap: 6px; margin: 1rem 0; }
+  .atom-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .atom-wrap canvas {
+    width: 56px !important; height: 56px !important;
+    border: 1px solid #ddd; cursor: pointer; transition: border-color .15s;
+  }
+  .atom-wrap canvas:hover, .atom-wrap canvas.sel { border-color: #777; }
+  .albl { font-size: 0.72rem; color: #bbb; font-style: italic; }
+
+  /* ── Reason cards ── */
+  .cards { display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0; }
+  .card { display: flex; gap: 1.2rem; padding: 1rem 1.2rem; border: 1px solid #e4e4dc; background: #fafaf2; }
+  .cnum { font-size: 1.8rem; color: #ccc; min-width: 22px; line-height: 1.2; font-style: italic; }
+  .ctitle { font-size: 1.2rem; color: #111; font-style: italic; margin-bottom: 0.2rem; }
+  .cbody { font-size: 1.05rem; color: #666; line-height: 1.65; }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0d8;
+    font-size: 0.9rem;
+    color: #bbb;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="content">
+
+  <a class="back" href="https://mayukhdeb.github.io/teaching/">&larr; teaching</a>
+
+  <h1>Overcomplete Dictionaries<br>&amp; Sparse Coding</h1>
+  <p class="subtitle">why more atoms than dimensions enables sparser, more robust representations</p>
+
+  <!-- ════════════════════════════════════════ -->
+  <hr>
+
+  <span class="section-num">§ 1</span>
+  <h2>The problem: representing a signal</h2>
+
+  <p>Suppose you want to describe a signal — a pattern of light on your retina, or a neural activity pattern — as a weighted sum of simple building blocks called <em>atoms</em>. You scale each atom by a coefficient and add them up to reconstruct the signal.</p>
+
+  <div class="math">s &nbsp;&approx;&nbsp; c&#x2081;&thinsp;&middot;&thinsp;a&#x2081; &nbsp;+&nbsp; c&#x2082;&thinsp;&middot;&thinsp;a&#x2082; &nbsp;+&nbsp; &hellip; &nbsp;+&nbsp; c&#x2099;&thinsp;&middot;&thinsp;a&#x2099;</div>
+
+  <p>The coefficients <em>c</em> are what you must store or transmit — they <em>are</em> the representation. The question is: how do you choose your atoms so the coefficients are as simple, as <em>sparse</em>, as possible?</p>
+
+  <div class="callout"><strong>Sparse</strong> means most coefficients are zero. Only a handful of atoms are active at once. This is metabolically cheap for neurons, and it makes the code easier to read out downstream.</div>
+
+  <p>With a <strong>complete basis</strong> — exactly as many atoms as dimensions — every signal has a <em>unique</em> representation. But uniqueness is not the same as sparsity. Drag the red dot below to see: the x/y basis rarely yields a sparse code.</p>
+
+  <div class="demo">
+    <div class="demo-label">complete basis &mdash; 2 atoms in 2D &mdash; drag the signal</div>
+    <div class="demo-body">
+      <canvas id="c1" height="240"></canvas>
+      <p class="note">Both bars are almost always nonzero. The x/y basis cannot produce a sparse code for a diagonal signal.</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <hr>
+
+  <span class="section-num">§ 2</span>
+  <h2>Overcomplete dictionary</h2>
+
+  <p>Now add a third atom at 60&deg;. We have 3 atoms in 2D — more than strictly necessary. Representations are no longer unique, but that redundancy is a feature: any signal is now close to <em>some</em> atom, so sparse representations become achievable. Toggle between dense and sparse solutions below.</p>
+
+  <div class="demo">
+    <div class="demo-label">overcomplete dictionary &mdash; 3 atoms in 2D &mdash; drag the signal</div>
+    <div class="demo-body">
+      <canvas id="c2" height="240"></canvas>
+      <div class="ctrl">
+        <button id="spBtn" onclick="toggleSp()">show sparse solution</button>
+        <span class="val" id="nnz"></span>
+      </div>
+      <p class="note">In sparse mode, the algorithm uses only the single best-matching atom. Compare the bar heights to the complete basis above.</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <hr>
+
+  <span class="section-num">§ 3</span>
+  <h2>The geometry of sparsity</h2>
+
+  <p>Here is the core geometric insight. Each atom defines a <em>direction</em> in signal space. Sparsity means your signal is close to one of those directions — it projects strongly onto one atom and weakly onto all others.</p>
+
+  <p>With a complete basis, the directions are fixed and sparse. A signal pointing between two atoms must use both. With an overcomplete dictionary you pack more directions into the same space, so any signal is likely to be close to <em>some</em> atom. Increase the atom count below and watch the worst-case gap shrink.</p>
+
+  <div class="demo">
+    <div class="demo-label">atom directions &amp; angular coverage</div>
+    <div class="demo-body">
+      <canvas id="c3" height="260"></canvas>
+      <div class="ctrl">
+        <label>atoms <input type="range" id="nA" min="2" max="16" value="4"><span class="val" id="nAv">4</span></label>
+      </div>
+      <p class="note">The shaded wedge is the worst-case angle to the nearest atom. More atoms &rarr; smaller wedge &rarr; any signal projects strongly onto one atom &rarr; sparser code.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Minimum projection</strong> onto the best atom = cos(&pi;/n). At n&thinsp;=&thinsp;2 (complete): cos(90&deg;) = 0 — the worst-case signal is orthogonal to both atoms. At n&thinsp;=&thinsp;8: cos(22.5&deg;) &asymp; 0.92 — almost any signal projects strongly onto one atom.
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <hr>
+
+  <span class="section-num">§ 4</span>
+  <h2>Matching pursuit — step by step</h2>
+
+  <p>How does a brain (or algorithm) actually <em>find</em> the sparse representation? One elegant method is <strong>Matching Pursuit</strong> — a greedy algorithm that proceeds exactly as intuition suggests: at each step, find the atom most correlated with what remains unexplained (the <em>residual</em>), subtract its contribution, and repeat.</p>
+
+  <div class="demo">
+    <div class="demo-label">matching pursuit &mdash; 8-dimensional signal &mdash; 12-atom overcomplete dictionary</div>
+    <div class="demo-body">
+      <canvas id="c4" height="220"></canvas>
+      <div class="two-col" style="margin-top:1rem;">
+        <div>
+          <div class="mlabel">residual energy remaining</div>
+          <canvas id="c4r" height="44" style="border:1px solid #ddd;"></canvas>
+        </div>
+        <div>
+          <div class="mlabel">coefficients used so far</div>
+          <canvas id="c4c" height="44" style="border:1px solid #ddd;"></canvas>
+        </div>
+      </div>
+      <div class="nav-row">
+        <button onclick="mpP()">&larr; prev</button>
+        <button onclick="mpN()">next &rarr;</button>
+        <em id="mpd"></em>
+      </div>
+    </div>
+  </div>
+
+  <p>Notice how the residual (red) collapses rapidly in the first few steps and then flattens. This is characteristic of sparse signals in overcomplete dictionaries: a few atoms capture the bulk of the energy, and the rest is noise.</p>
+
+  <!-- ════════════════════════════════════════ -->
+  <hr>
+
+  <span class="section-num">§ 5</span>
+  <h2>Sparsity vs. reconstruction error</h2>
+
+  <p>There is a tradeoff: using fewer atoms is cheaper but less accurate. The key advantage of an overcomplete dictionary is that it reaches <em>lower error at the same atom count</em> — because its denser coverage of directions means any signal is closer to some atom from the start.</p>
+
+  <div class="demo">
+    <div class="demo-label">atoms used vs. reconstruction error &mdash; drag to explore different signals</div>
+    <div class="demo-body">
+      <canvas id="c5" height="240"></canvas>
+      <div class="ctrl">
+        <label>signal angle <input type="range" id="sA" min="0" max="360" value="37"><span class="val" id="sAv">37&deg;</span></label>
+        <button onclick="rndA()">random</button>
+      </div>
+      <p class="note">Blue = overcomplete (8 atoms). Red = complete (2 atoms). The gap is largest when the signal falls between the complete basis directions.</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <hr>
+
+  <span class="section-num">§ 6</span>
+  <h2>Grid cells as an overcomplete spatial dictionary</h2>
+
+  <p>Now lift this to neural coding. A grid cell's firing rate map is a sum of three cosines at 60&deg; offsets — a hexagonally periodic atom in 2D space. The full grid cell population provides atoms at multiple phases and spatial scales (modules), forming an overcomplete dictionary for position.</p>
+
+  <div class="math" style="font-size:1.1rem;">r(x,y) &nbsp;=&nbsp; cos(2&pi;&#x202F;f&#x2081;&middot;x + &phi;&#x2081;) &nbsp;+&nbsp; cos(2&pi;&#x202F;f&#x2082;&middot;x + &phi;&#x2082;) &nbsp;+&nbsp; cos(2&pi;&#x202F;f&#x2083;&middot;x + &phi;&#x2083;)</div>
+
+  <p>Different cells within a module have different phases (&phi;), tiling all possible locations. Different modules have different spatial frequencies, roughly scaling by a factor of 1.4. Click any atom below to expand it.</p>
+
+  <div class="demo">
+    <div class="demo-label">hexagonal grid atoms &mdash; each panel is one grid cell&rsquo;s firing rate map</div>
+    <div class="demo-body">
+      <div id="ag" class="atom-grid"></div>
+      <canvas id="cgf" height="160" style="margin-top:1rem;display:none;border:1px solid #ddd;"></canvas>
+      <div class="ctrl">
+        <label>spatial frequency <input type="range" id="gf" min="0.5" max="4" value="1.5" step="0.5"><span class="val" id="gfv">1.5</span></label>
+        <button onclick="buildAg()">regenerate phases</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout"><strong>Place cells</strong> emerge as a sparse readout: a rat at any given location activates a small subset of grid atoms — exactly a sparse code in an overcomplete dictionary. The overcomplete covering of 2D space is precisely what allows a sparse, robust place code.</div>
+
+  <!-- ════════════════════════════════════════ -->
+  <hr>
+
+  <span class="section-num">§ 7</span>
+  <h2>Why overcomplete? Three reasons</h2>
+
+  <p>Overcompleteness is not redundancy in a wasteful sense. It buys three concrete properties, all present in the grid cell system.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="cnum">I</div>
+      <div>
+        <div class="ctitle">Flexibility</div>
+        <div class="cbody">More atom directions means any signal is close to some atom, enabling a sparse representation for <em>any</em> input — not only those aligned with a fixed basis. A grid cell module at a single scale and orientation could only sparsely encode signals in certain directions of neural activity space.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cnum">II</div>
+      <div>
+        <div class="ctitle">Robustness to loss</div>
+        <div class="cbody">A complete basis has zero redundancy — lose one atom and reconstruction fails along that dimension. An overcomplete dictionary degrades gracefully. Grid cells are routinely lost to aging, injury, and disease; the system continues to function because neighboring atoms (cells with similar phases and scales) can partially compensate.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cnum">III</div>
+      <div>
+        <div class="ctitle">Metabolic efficiency</div>
+        <div class="cbody">Sparse codes use fewer active neurons per stimulus — lower energy cost, less interference between simultaneously stored memories, and higher representational capacity. A rat at any location activates only a small fraction of all place cells, consistent with sparse coding.</div>
+      </div>
+    </div>
+  </div>
+
+  <p>Drag the slider below to remove atoms from both dictionaries and compare how gracefully they degrade.</p>
+
+  <div class="demo">
+    <div class="demo-label">robustness &mdash; drop atoms and watch error across all signal angles &mdash; red = complete &mdash; blue = overcomplete</div>
+    <div class="demo-body">
+      <canvas id="c7" height="220"></canvas>
+      <div class="ctrl">
+        <label>atoms lost <input type="range" id="dp" min="0" max="80" value="0" step="5"><span class="val" id="dpv">0%</span></label>
+      </div>
+      <p class="note">The overcomplete dictionary (blue) degrades smoothly. The complete basis (red) fails catastrophically when a critical atom is removed — the complete basis has no slack.</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    Inspired by Olshausen &amp; Field (1996), Mallat &amp; Zhang (1993), Moser et al. (2008).
+  </div>
+
+</div><!-- /content -->
+
+<script>
+const TAU = Math.PI * 2;
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+
+const P = {
+  bg:    '#fafaf2',
+  paper: '#fffff8',
+  ink:   '#111',
+  dim:   '#666',
+  faint: '#ddd',
+  line:  '#e0e0d8',
+  red:   '#7a1a1a',
+  blue:  '#1e3d6e',
+  green: '#234d23',
+  amber: '#6b500d',
+};
+
+// ── Canvas setup ──────────────────────────────
+function sc(id, H) {
+  const el = document.getElementById(id);
+  const dpr = window.devicePixelRatio || 1;
+  const W = el.parentElement.clientWidth - 32;
+  el.style.width = W + 'px'; el.style.height = H + 'px';
+  el.width = W * dpr; el.height = H * dpr;
+  const ctx = el.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, W, H, el };
+}
+
+function bg(ctx, W, H) {
+  ctx.fillStyle = P.bg; ctx.fillRect(0, 0, W, H);
+}
+
+function arr(ctx, x1, y1, x2, y2, col, lw=1.8) {
+  const a = Math.atan2(y2-y1, x2-x1);
+  ctx.strokeStyle = col; ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-9*Math.cos(a-.38), y2-9*Math.sin(a-.38));
+  ctx.lineTo(x2-9*Math.cos(a+.38), y2-9*Math.sin(a+.38));
+  ctx.closePath(); ctx.fill();
+}
+
+function dragUnit(el, cx, cy, cb) {
+  function pos(e) {
+    const r = el.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const sx = el.width/dpr/r.width, sy = el.height/dpr/r.height;
+    const cx2 = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy2 = e.touches ? e.touches[0].clientY : e.clientY;
+    let dx = (cx2-r.left)*sx - cx, dy = (cy2-r.top)*sy - cy;
+    const l = Math.sqrt(dx*dx+dy*dy) || 1;
+    return {x: dx/l, y: dy/l};
+  }
+  let dn = false;
+  el.addEventListener('mousedown', e=>{dn=true; cb(pos(e));});
+  el.addEventListener('mousemove', e=>{if(dn) cb(pos(e));});
+  el.addEventListener('mouseup', ()=>dn=false);
+  el.addEventListener('mouseleave', ()=>dn=false);
+  el.addEventListener('touchstart', e=>{e.preventDefault();dn=true;cb(pos(e));},{passive:false});
+  el.addEventListener('touchmove', e=>{e.preventDefault();if(dn)cb(pos(e));},{passive:false});
+  el.addEventListener('touchend', ()=>dn=false);
+}
+
+function bars2(ctx, BX, BW, H, coefs, cols, labels, active) {
+  ctx.fillStyle = '#f5f5ee'; ctx.fillRect(BX, 16, BW, H-32);
+  ctx.strokeStyle = P.faint; ctx.strokeRect(BX, 16, BW, H-32);
+  const n = coefs.length;
+  const bw = (BW - (n+1)*8) / n;
+  const mid = H/2, scH = H/2 - 28;
+  coefs.forEach((c, i) => {
+    const x = BX + 8 + i*(bw+8);
+    const h = Math.abs(c)*scH, y = c>=0 ? mid-h : mid;
+    ctx.fillStyle = cols[i]+'22'; ctx.fillRect(x, 26, bw, H-52);
+    ctx.fillStyle = cols[i]; ctx.fillRect(x, y, bw, h);
+    ctx.strokeStyle = P.faint; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x,mid); ctx.lineTo(x+bw,mid); ctx.stroke();
+    ctx.fillStyle = P.dim; ctx.font = 'italic 11px et-book,Georgia,serif';
+    ctx.fillText(labels[i], x+bw/2-7, H-20);
+    ctx.fillText(c.toFixed(2), x+bw/2-14, H-7);
+  });
+  const nnz = coefs.filter(c=>Math.abs(c)>.08).length;
+  ctx.fillStyle = nnz <= (active||1) ? P.green : P.red;
+  ctx.font = 'italic 10px et-book,Georgia,serif';
+  ctx.fillText('active: '+nnz+'/'+coefs.length, BX+7, 13);
+}
+
+// ── § 1: Complete basis ───────────────────────
+let s1 = {x:.65, y:.4};
+(function init1() {
+  const {ctx,W,H,el} = sc('c1', 240);
+  const CX = Math.min(185,W*.33), CY = H/2, R = Math.min(88,H*.36);
+  function draw() {
+    bg(ctx,W,H);
+    ctx.strokeStyle = P.faint; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(CX,CY,R,0,TAU); ctx.stroke();
+    [{x:1,y:0,c:P.blue},{x:0,y:-1,c:P.green}].forEach(a => {
+      ctx.strokeStyle = a.c+'55'; ctx.lineWidth=1; ctx.setLineDash([5,5]);
+      ctx.beginPath(); ctx.moveTo(CX-a.x*R,CY-a.y*R); ctx.lineTo(CX+a.x*R,CY+a.y*R); ctx.stroke();
+      ctx.setLineDash([]);
+    });
+    const c1=s1.x, c2=-s1.y;
+    ctx.strokeStyle = P.blue+'44'; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.moveTo(CX+s1.x*R,CY+s1.y*R); ctx.lineTo(CX+c1*R,CY); ctx.stroke();
+    ctx.strokeStyle = P.green+'44';
+    ctx.beginPath(); ctx.moveTo(CX+s1.x*R,CY+s1.y*R); ctx.lineTo(CX,CY+s1.y*R); ctx.stroke();
+    ctx.setLineDash([]);
+    arr(ctx, CX,CY, CX+s1.x*R, CY+s1.y*R, P.red, 2);
+    ctx.fillStyle=P.red; ctx.beginPath(); ctx.arc(CX+s1.x*R,CY+s1.y*R,6,0,TAU); ctx.fill();
+    ctx.fillStyle=P.blue; ctx.font='italic 12px et-book,Georgia,serif'; ctx.fillText('a₁',CX+R+8,CY+4);
+    ctx.fillStyle=P.green; ctx.fillText('a₂',CX+4,CY-R-6);
+    const BX=CX+R+34, BW=W-BX-6;
+    if(BW>50) bars2(ctx,BX,BW,H,[c1,c2],[P.blue,P.green],['c₁','c₂'],1);
+  }
+  draw();
+  dragUnit(el, CX,CY, p=>{s1=p; draw();});
+})();
+
+// ── § 2: Overcomplete ─────────────────────────
+let s2={x:.5,y:.6}, sp=false;
+const A2=[0,Math.PI/3,2*Math.PI/3].map(a=>({x:Math.cos(a),y:Math.sin(a)}));
+const AC=[P.blue,P.green,P.amber];
+
+let redraw2 = ()=>{};
+window.toggleSp = function(){
+  sp=!sp;
+  const b=document.getElementById('spBtn');
+  b.textContent = sp ? 'show dense solution' : 'show sparse solution';
+  b.classList.toggle('on',sp);
+  redraw2();
+};
+
+(function init2(){
+  const {ctx,W,H,el} = sc('c2',240);
+  const CX=Math.min(185,W*.33), CY=H/2, R=Math.min(88,H*.36);
+  function dot(a,b){return a.x*b.x+a.y*b.y;}
+  redraw2 = function(){
+    bg(ctx,W,H);
+    ctx.strokeStyle=P.faint; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(CX,CY,R,0,TAU); ctx.stroke();
+    let coefs;
+    if(sp){
+      const pr=A2.map((a,i)=>({i,p:Math.abs(dot(s2,a))})).sort((a,b)=>b.p-a.p);
+      coefs=[0,0,0]; coefs[pr[0].i]=dot(s2,A2[pr[0].i]);
+    } else { coefs=A2.map(a=>dot(s2,a)); }
+    A2.forEach((a,i)=>{
+      ctx.strokeStyle=AC[i]+'55'; ctx.lineWidth=1; ctx.setLineDash([5,5]);
+      ctx.beginPath(); ctx.moveTo(CX-a.x*R,CY-a.y*R); ctx.lineTo(CX+a.x*R,CY+a.y*R); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle=AC[i]; ctx.font='italic 12px et-book,Georgia,serif';
+      ctx.fillText('a'+(i+1), CX+a.x*(R+12)-5, CY+a.y*(R+12)+4);
+    });
+    arr(ctx,CX,CY,CX+s2.x*R,CY+s2.y*R,P.red,2);
+    ctx.fillStyle=P.red; ctx.beginPath(); ctx.arc(CX+s2.x*R,CY+s2.y*R,6,0,TAU); ctx.fill();
+    const BX=CX+R+34, BW=W-BX-6;
+    if(BW>50) bars2(ctx,BX,BW,H,coefs,AC,['c₁','c₂','c₃'],1);
+    document.getElementById('nnz').textContent = coefs.filter(c=>Math.abs(c)>.08).length+' active / 3';
+  };
+  redraw2();
+  dragUnit(el,CX,CY,p=>{s2=p;redraw2();});
+})();
+
+// ── § 3: Geometry ─────────────────────────────
+(function init3(){
+  const {ctx,W,H} = sc('c3',260);
+  const CX=W/2, CY=H/2, R=Math.min(104,H*.37);
+  const sl=document.getElementById('nA'), vd=document.getElementById('nAv');
+  function draw(){
+    const n=+sl.value; vd.textContent=n;
+    bg(ctx,W,H);
+    const ma=Math.PI/n;
+    ctx.fillStyle=P.red+'16';
+    ctx.beginPath(); ctx.moveTo(CX,CY); ctx.arc(CX,CY,R,-ma/2,ma/2); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle=P.red+'55'; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(CX,CY); ctx.arc(CX,CY,R,-ma/2,ma/2); ctx.closePath(); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle=P.faint; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(CX,CY,R,0,TAU); ctx.stroke();
+    for(let i=0;i<n;i++){
+      const a=(i/n)*Math.PI;
+      ctx.strokeStyle=P.dim+'88'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(CX-Math.cos(a)*R,CY-Math.sin(a)*R); ctx.lineTo(CX+Math.cos(a)*R,CY+Math.sin(a)*R); ctx.stroke();
+    }
+    ctx.strokeStyle=P.red+'cc'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(CX,CY,38,-ma/2,ma/2); ctx.stroke();
+    const mp=Math.cos(ma), tx=W-168, ty=32;
+    ctx.fillStyle=P.dim; ctx.font='italic 11px et-book,Georgia,serif';
+    ctx.fillText('atoms:       '+n, tx, ty);
+    ctx.fillText('max angle:  '+(ma*180/Math.PI).toFixed(1)+'°', tx, ty+17);
+    ctx.fillText('min proj:    '+mp.toFixed(3), tx, ty+34);
+    ctx.fillStyle=mp>.9?P.green:mp>.7?P.amber:P.red;
+    ctx.fillText(mp>.9?'excellent':mp>.7?'good':'poor', tx, ty+54);
+  }
+  draw(); sl.addEventListener('input',draw);
+})();
+
+// ── § 4: Matching Pursuit ─────────────────────
+const MN=8, MA=12;
+const mSig=(()=>{
+  const s=Array.from({length:MN},(_,i)=>Math.sin(i*.9+.3)*.8+Math.cos(i*1.7)*.4);
+  const n=Math.sqrt(s.reduce((a,x)=>a+x*x,0)); return s.map(x=>x/n);
+})();
+const mDict=Array.from({length:MA},(_,j)=>{
+  const a=Array.from({length:MN},(_,i)=>Math.sin(i*(j+1)*Math.PI/MA+j*.7));
+  const n=Math.sqrt(a.reduce((s,x)=>s+x*x,0)); return a.map(x=>x/n);
+});
+function dotN(a,b){return a.reduce((s,x,i)=>s+x*b[i],0);}
+let mSteps=[], mSt=0, mC={};
+const mDesc=['Residual = original signal. No atoms selected yet.',
+  'Step 1: pick the atom most correlated with the residual.',
+  'Step 2: subtract best match, repeat on new residual.',
+  'Step 3: residual energy drops rapidly.',
+  'Step 4: diminishing returns begin.',
+  'Step 5: signal nearly reconstructed.'];
+
+(function init4(){
+  mC.main=sc('c4',220); mC.res=sc('c4r',44); mC.cof=sc('c4c',44);
+  let res=[...mSig]; const used=[];
+  mSteps.push({res:[...res],ch:-1,used:[]});
+  for(let k=0;k<5;k++){
+    let bi=-1,bp=-Infinity;
+    mDict.forEach((a,i)=>{const p=Math.abs(dotN(res,a));if(p>bp){bp=p;bi=i;}});
+    const c=dotN(res,mDict[bi]);
+    res=res.map((r,i)=>r-c*mDict[bi][i]);
+    used.push({idx:bi,coef:c});
+    mSteps.push({res:[...res],ch:bi,used:used.map(u=>({...u}))});
+  }
+  renderMP();
+})();
+
+function renderMP(){
+  const {ctx,W,H}=mC.main, {ctx:rc,W:RW,H:RH}=mC.res, {ctx:cc,W:CW,H:CH}=mC.cof;
+  const st=mSteps[mSt]; if(!st)return;
+  bg(ctx,W,H);
+  const bw=Math.floor((W-36)/(MN*3+2)), gw=bw*3+4, baseY=H-42, sh=72;
+  for(let i=0;i<MN;i++){
+    const x=16+i*gw;
+    [[mSig[i],P.dim+'77'],[mSig[i]-st.res[i],P.blue+'cc'],[st.res[i],P.red+'cc']].forEach(([v,col],k)=>{
+      const h=Math.abs(v)*sh, y=v>=0?baseY-h:baseY;
+      ctx.fillStyle=col; ctx.fillRect(x+k*(bw+1),y,bw,h);
+    });
+    ctx.strokeStyle=P.faint; ctx.lineWidth=.5;
+    ctx.beginPath(); ctx.moveTo(x,baseY); ctx.lineTo(x+gw-2,baseY); ctx.stroke();
+  }
+  ctx.fillStyle=P.dim+'cc'; ctx.font='italic 10px et-book,Georgia,serif';
+  ctx.fillText('■ signal',16,H-26); ctx.fillStyle=P.blue; ctx.fillText('■ reconstruction',88,H-26);
+  ctx.fillStyle=P.red; ctx.fillText('■ residual',214,H-26);
+  ctx.fillStyle=P.dim; ctx.fillText('step '+mSt+'/5',W-64,H-26);
+
+  const en=Math.sqrt(st.res.reduce((s,x)=>s+x*x,0));
+  rc.fillStyle=P.bg; rc.fillRect(0,0,RW,RH);
+  rc.fillStyle=en<.3?P.green:en<.6?P.amber:P.red;
+  rc.fillRect(0,0,en*RW,RH);
+  rc.strokeStyle=P.faint; rc.strokeRect(0,0,RW,RH);
+  rc.fillStyle=P.dim; rc.font='italic 10px et-book,Georgia,serif';
+  rc.fillText((en*100).toFixed(1)+'% remaining', 5, RH-4);
+
+  const mx=Math.max(...st.used.map(u=>Math.abs(u.coef)),.01);
+  cc.fillStyle=P.bg; cc.fillRect(0,0,CW,CH);
+  const cbw=Math.floor((CW-8)/MA)-1;
+  for(let i=0;i<MA;i++){
+    const u=st.used.find(u=>u.idx===i);
+    const h=u?Math.abs(u.coef)/mx*(CH-4):1;
+    cc.fillStyle=u?(i===st.ch?P.red:P.blue):P.faint;
+    cc.fillRect(4+i*(cbw+1),CH-h-1,cbw,h);
+  }
+  cc.strokeStyle=P.faint; cc.strokeRect(0,0,CW,CH);
+  document.getElementById('mpd').textContent=mDesc[mSt]||'';
+}
+window.mpN=function(){if(mSt<mSteps.length-1){mSt++;renderMP();}};
+window.mpP=function(){if(mSt>0){mSt--;renderMP();}};
+
+// ── § 5: Tradeoff ─────────────────────────────
+function trErr(angDeg,ks,tot){
+  const a=angDeg*Math.PI/180, sig=[Math.cos(a),Math.sin(a)];
+  const atoms=Array.from({length:tot},(_,i)=>{const t=(i/tot)*Math.PI;return[Math.cos(t),Math.sin(t)];});
+  return ks.map(k=>{
+    let res=[...sig]; const used=[];
+    for(let s=0;s<k;s++){
+      let bi=-1,bp=-1;
+      atoms.forEach((at,i)=>{if(used.includes(i))return;const p=Math.abs(res[0]*at[0]+res[1]*at[1]);if(p>bp){bp=p;bi=i;}});
+      if(bi<0)break;
+      const c=res[0]*atoms[bi][0]+res[1]*atoms[bi][1];
+      res=res.map((r,d)=>r-c*atoms[bi][d]); used.push(bi);
+    }
+    return Math.sqrt(res.reduce((s,x)=>s+x*x,0));
+  });
+}
+let tA=37;
+(function init5(){
+  const {ctx,W,H}=sc('c5',240);
+  const sl=document.getElementById('sA'), vd=document.getElementById('sAv');
+  function draw(){
+    bg(ctx,W,H);
+    const PAD={l:44,r:14,t:20,b:40}, PW=W-PAD.l-PAD.r, PH=H-PAD.t-PAD.b;
+    ctx.strokeStyle=P.faint; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,PAD.t+PH); ctx.lineTo(PAD.l+PW,PAD.t+PH); ctx.stroke();
+    const xs=[1,2,3,4];
+    const oe=trErr(tA,xs,8), ce=trErr(tA,xs,2);
+    const toX=k=>PAD.l+(k-1)/(xs.length-1)*PW;
+    const toY=e=>PAD.t+PH-clamp(e,0,1.1)*PH/1.1;
+    [.25,.5,.75,1].forEach(v=>{
+      const y=toY(v); ctx.strokeStyle=P.line; ctx.lineWidth=.5;
+      ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+PW,y); ctx.stroke();
+      ctx.fillStyle=P.dim; ctx.font='italic 10px et-book,Georgia,serif'; ctx.fillText(v.toFixed(2),2,y+4);
+    });
+    xs.forEach(k=>{ctx.fillStyle=P.dim; ctx.font='italic 10px et-book,Georgia,serif'; ctx.fillText(k,toX(k)-3,PAD.t+PH+16);});
+    [[oe,P.blue,'overcomplete (8)'],[ce,P.red,'complete (2)']].forEach(([err,col,lbl],li)=>{
+      ctx.strokeStyle=col; ctx.lineWidth=2;
+      ctx.beginPath(); xs.forEach((k,i)=>i===0?ctx.moveTo(toX(k),toY(err[i])):ctx.lineTo(toX(k),toY(err[i]))); ctx.stroke();
+      xs.forEach((k,i)=>{ctx.fillStyle=col;ctx.beginPath();ctx.arc(toX(k),toY(err[i]),4,0,TAU);ctx.fill();});
+      ctx.fillStyle=col; ctx.font='italic 10px et-book,Georgia,serif';
+      ctx.fillText('─ '+lbl, PAD.l+8, PAD.t+14+li*16);
+    });
+    ctx.fillStyle=P.dim; ctx.font='italic 10px et-book,Georgia,serif';
+    ctx.fillText('atoms used →',PAD.l+PW/2-36,H-4);
+    ctx.save(); ctx.translate(12,PAD.t+PH/2); ctx.rotate(-Math.PI/2); ctx.fillText('error',0,0); ctx.restore();
+  }
+  draw();
+  sl.addEventListener('input',()=>{tA=+sl.value;vd.textContent=tA+'°';draw();});
+  window.rndA=()=>{tA=Math.floor(Math.random()*360);sl.value=tA;vd.textContent=tA+'°';draw();};
+})();
+
+// ── § 6: Grid atoms ───────────────────────────
+function hexData(w,h,freq,px,py){
+  const d=new Uint8ClampedArray(w*h*4);
+  const f=[0,Math.PI/3,2*Math.PI/3].map(a=>({x:freq*Math.cos(a),y:freq*Math.sin(a)}));
+  for(let j=0;j<h;j++) for(let i=0;i<w;i++){
+    const x=(i/w-.5)*6, y=(j/h-.5)*6;
+    const v=(Math.cos(TAU*(f[0].x*x+f[0].y*y+px))+
+             Math.cos(TAU*(f[1].x*x+f[1].y*y+py))+
+             Math.cos(TAU*(f[2].x*x+f[2].y*y-px-py)))/3;
+    const t=clamp((v+1)/2,0,1), idx=(j*w+i)*4;
+    let r,g,b;
+    if(t<.25){r=0;g=0;b=.5+t*2;}
+    else if(t<.5){r=0;g=(t-.25)*4;b=1;}
+    else if(t<.75){r=(t-.5)*4;g=1;b=1-(t-.5)*4;}
+    else{r=1;g=1-(t-.75)*4;b=0;}
+    d[idx]=r*255;d[idx+1]=g*255;d[idx+2]=b*255;d[idx+3]=255;
+  }
+  return d;
+}
+window.buildAg=function(){
+  const freq=+document.getElementById('gf').value;
+  document.getElementById('gfv').textContent=freq;
+  const cont=document.getElementById('ag'); cont.innerHTML='';
+  Array.from({length:12},()=>[Math.random(),Math.random()]).forEach((ph,i)=>{
+    const wrap=document.createElement('div'); wrap.className='atom-wrap';
+    const c=document.createElement('canvas'); c.width=56; c.height=56;
+    const ctx2=c.getContext('2d');
+    const id2=ctx2.createImageData(56,56); id2.data.set(hexData(56,56,freq,ph[0],ph[1])); ctx2.putImageData(id2,0,0);
+    c.addEventListener('click',()=>{
+      document.querySelectorAll('#ag canvas').forEach(x=>x.classList.remove('sel')); c.classList.add('sel');
+      const f=document.getElementById('cgf');
+      const pw=f.parentElement.clientWidth-32;
+      f.style.display='block'; f.style.width=pw+'px'; f.width=pw; f.height=160;
+      const fc=f.getContext('2d');
+      const fd=fc.createImageData(pw,160); fd.data.set(hexData(pw,160,freq,ph[0],ph[1])); fc.putImageData(fd,0,0);
+    });
+    const l=document.createElement('div'); l.className='albl'; l.textContent='a'+(i+1);
+    wrap.appendChild(c); wrap.appendChild(l); cont.appendChild(wrap);
+  });
+};
+document.getElementById('gf').addEventListener('input',buildAg);
+buildAg();
+
+// ── § 7: Robustness ───────────────────────────
+function robErr(tot,frac,angDeg){
+  const a=angDeg*Math.PI/180, sig=[Math.cos(a),Math.sin(a)];
+  const all=Array.from({length:tot},(_,i)=>{const t=(i/tot)*Math.PI;return[Math.cos(t),Math.sin(t)];});
+  const nd=Math.floor(tot*frac);
+  const dr=new Set(); for(let i=0;i<nd;i++) dr.add(Math.floor(i*tot/nd));
+  const atoms=all.filter((_,i)=>!dr.has(i)); if(!atoms.length)return 1;
+  let res=[...sig];
+  for(let s=0;s<Math.min(3,atoms.length);s++){
+    let bi=-1,bp=-1;
+    atoms.forEach((at,i)=>{const p=Math.abs(res[0]*at[0]+res[1]*at[1]);if(p>bp){bp=p;bi=i;}});
+    if(bi<0)break;
+    const c=res[0]*atoms[bi][0]+res[1]*atoms[bi][1];
+    res=res.map((r,d)=>r-c*atoms[bi][d]);
+  }
+  return Math.sqrt(res.reduce((s,x)=>s+x*x,0));
+}
+(function init7(){
+  const {ctx,W,H}=sc('c7',220);
+  const sl=document.getElementById('dp'), vd=document.getElementById('dpv');
+  function draw(){
+    bg(ctx,W,H);
+    const frac=+sl.value/100; vd.textContent=sl.value+'%';
+    const PAD={l:44,r:14,t:20,b:40}, PW=W-PAD.l-PAD.r, PH=H-PAD.t-PAD.b;
+    ctx.strokeStyle=P.faint; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,PAD.t+PH); ctx.lineTo(PAD.l+PW,PAD.t+PH); ctx.stroke();
+    const na=36, angs=Array.from({length:na},(_,i)=>(i/na)*360);
+    const oe=angs.map(a=>robErr(12,frac,a)), ce=angs.map(a=>robErr(2,frac,a));
+    const toX=i=>PAD.l+(i/(na-1))*PW;
+    const toY=e=>PAD.t+PH-clamp(e,0,1)*PH;
+    [0,.5,1].forEach(v=>{
+      ctx.strokeStyle=P.line; ctx.lineWidth=.5;
+      ctx.beginPath(); ctx.moveTo(PAD.l,toY(v)); ctx.lineTo(PAD.l+PW,toY(v)); ctx.stroke();
+      ctx.fillStyle=P.dim; ctx.font='italic 10px et-book,Georgia,serif'; ctx.fillText(v.toFixed(1),2,toY(v)+4);
+    });
+    [[oe,P.blue],[ce,P.red]].forEach(([err,col])=>{
+      ctx.fillStyle=col+'18';
+      ctx.beginPath(); angs.forEach((_,i)=>i===0?ctx.moveTo(toX(i),toY(err[i])):ctx.lineTo(toX(i),toY(err[i])));
+      ctx.lineTo(toX(na-1),PAD.t+PH); ctx.lineTo(PAD.l,PAD.t+PH); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle=col; ctx.lineWidth=1.8;
+      ctx.beginPath(); angs.forEach((_,i)=>i===0?ctx.moveTo(toX(i),toY(err[i])):ctx.lineTo(toX(i),toY(err[i]))); ctx.stroke();
+    });
+    [0,90,180,270].forEach(a=>{
+      ctx.fillStyle=P.dim; ctx.font='italic 10px et-book,Georgia,serif';
+      ctx.fillText(a+'°', PAD.l+(a/360)*PW-8, PAD.t+PH+16);
+    });
+    ctx.fillStyle=P.dim; ctx.font='italic 10px et-book,Georgia,serif';
+    ctx.fillText('signal angle →',PAD.l+PW/2-40,H-4);
+    ctx.save(); ctx.translate(12,PAD.t+PH/2); ctx.rotate(-Math.PI/2); ctx.fillText('error',0,0); ctx.restore();
+  }
+  draw(); sl.addEventListener('input',draw);
+})();
+</script>
+</body>
+</html>
