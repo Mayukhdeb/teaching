@@ -1,133 +1,185 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Effective Dimensionality — Visual Explainer</title>
+<title>Effective Dimensionality</title>
+<link rel="stylesheet" href="https://edwardtufte.github.io/et-book/et-book.css">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+  html { font-size: 15px; }
+
+  body {
+    background: #fffff8;
+    color: #111;
+    font-family: et-book, Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+    margin: 0; padding: 0;
+  }
+
+  .content { max-width: 960px; margin: 0 auto; padding: 4rem 2rem 8rem; }
+
+  .back { display: inline-block; font-size: 1rem; color: #aaa; text-decoration: none; margin-bottom: 2rem; }
+  .back:hover { color: #111; }
+
+  h1 { font-weight: 400; font-style: italic; font-size: 3rem; line-height: 1.08; margin-top: 0.5rem; margin-bottom: 0; }
+  .subtitle { font-style: italic; font-size: 1.3rem; color: #666; margin-top: 0.5rem; margin-bottom: 0; }
+
+  hr { border: none; border-top: 1px solid #e0e0d8; margin: 3rem 0; }
+  p { font-size: 1.2rem; line-height: 1.8; margin-top: 0.8rem; color: #444; }
 
   :root {
-    --bg:#ffffff; --bg2:#f7f8fb; --border:#e2e6ef; --border2:#cdd3e0;
-    --text:#111827; --blue:#5b8dee; --blue-lt:#dce8fc; --blue-mid:#a8c4f5;
-    --muted:#8492a6; --pc1:#d94f4f; --pc2:#3aaa72; --pc1-lt:#fde8e8;
-    --pc2-lt:#d8f5e8; --gold:#c98a2e;
+    --blue: #1e3d6e;
+    --blue-lt: #f0f0e8;
+    --blue-mid: #bbb;
+    --muted: #777;
+    --pc1: #7a1a1a;
+    --pc2: #234d23;
+    --gold: #6b500d;
+    --border: #e0e0d8;
+    --border2: #ccc;
   }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.6;min-height:100vh;}
 
-  .page-header{border-bottom:1px solid var(--border);padding:28px 48px 22px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;}
-  .page-header h1{font-family:'Libre Baskerville',serif;font-size:1.75rem;font-weight:700;letter-spacing:-0.01em;}
-  .page-header .subtitle{font-size:13px;color:var(--muted);font-style:italic;font-family:'Libre Baskerville',serif;}
+  .steps-nav {
+    display: flex; gap: 0;
+    margin: 2rem 0 1.5rem;
+    border-bottom: 1px solid #e0e0d8;
+  }
+  .step-btn {
+    font-family: et-book, Georgia, serif;
+    font-style: italic; font-size: 1rem;
+    padding: 0.4rem 1.5rem 0.4rem 0;
+    border: none; background: transparent; color: #bbb;
+    cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color 0.15s;
+  }
+  .step-btn:hover { color: #555; }
+  .step-btn.active { color: #111; border-bottom-color: #666; }
 
-  .container{max-width:1160px;margin:0 auto;padding:26px 26px 80px;}
+  .demo { margin: 0 0 2rem; border: 1px solid #ddd; background: #fafaf2; }
+  .demo-label {
+    font-size: 0.82rem; color: #aaa; padding: 0.4rem 1rem;
+    border-bottom: 1px solid #e8e8e0; background: #f4f4eb; font-style: italic;
+  }
+  .demo-body { padding: 1.2rem 1.4rem 1.4rem; background: #fffff8; }
 
-  /* nav */
-  .steps-nav{display:flex;gap:0;margin-bottom:22px;border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:380px;}
-  .step-btn{flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;padding:10px 8px;border:none;border-right:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;text-align:center;}
-  .step-btn:last-child{border-right:none;}
-  .step-btn:hover{background:var(--bg2);color:var(--text);}
-  .step-btn.active{background:var(--blue);color:#fff;}
+  .callout {
+    border-left: 2px solid #bbb; padding: 0.5rem 1rem;
+    color: #555; font-style: italic; font-size: 1rem; line-height: 1.6; margin: 0.8rem 0;
+  }
+  .callout strong { font-style: normal; color: #111; }
 
-  /* card */
-  .card{border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-  .card-top{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;gap:14px;}
-  .step-num{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);background:var(--blue-lt);border:1px solid var(--blue-mid);border-radius:4px;padding:3px 9px;white-space:nowrap;}
-  .card-top h2{font-family:'Libre Baskerville',serif;font-size:1rem;font-weight:700;}
-  .card-top p{font-size:12.5px;color:var(--muted);margin-top:1px;font-weight:300;}
-  .card-body{padding:18px;background:var(--bg);}
+  .canvas-wrap { position: relative; border: 1px solid #ddd; overflow: hidden; background: #fffff8; }
+  canvas { display: block; width: 100%; }
+  .canvas-label {
+    position: absolute; bottom: 6px; right: 10px;
+    font-size: 0.78rem; color: #ccc; font-style: italic;
+  }
 
-  /* shared */
-  .canvas-wrap{position:relative;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg);}
-  canvas{display:block;width:100%;}
-  .canvas-label{position:absolute;bottom:7px;right:10px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--border2);}
+  .ctrl-block { border: 1px solid #e0e0d8; padding: 0.7rem 0.9rem; background: #fafaf2; }
+  .ctrl-label {
+    font-size: 0.82rem; color: #aaa; font-style: italic; margin-bottom: 0.5rem;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .ctrl-label span { color: #555; font-style: normal; }
 
-  .ctrl-block{border:1px solid var(--border);border-radius:8px;padding:11px 13px;background:var(--bg2);}
-  .ctrl-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between;}
-  .ctrl-label span{color:var(--blue);}
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 2px;
+    background: #ccc; border-radius: 1px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 13px; height: 13px;
+    border-radius: 50%; background: #555; cursor: pointer;
+  }
 
-  input[type=range]{width:100%;-webkit-appearance:none;height:2px;background:var(--border2);border-radius:2px;outline:none;}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(91,141,238,.3);}
+  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  button {
+    font-family: et-book, Georgia, serif; font-style: italic; font-size: 1rem;
+    background: transparent; color: #777; border: 1px solid #ccc;
+    padding: 0.25rem 0.75rem; cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
+  }
+  button:hover { color: #111; border-color: #888; }
+  button.primary { background: #fafaf2; border-color: #999; color: #333; }
+  button.danger { color: #7a1a1a; border-color: #c0a0a0; }
+  button.danger:hover { background: #f8f0f0; }
 
-  .btn-row{display:flex;gap:6px;flex-wrap:wrap;}
-  .btn{flex:1;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.05em;padding:7px 9px;border-radius:6px;border:1px solid var(--border2);background:var(--bg);color:var(--text);cursor:pointer;transition:all .14s;text-align:center;white-space:nowrap;}
-  .btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt);}
-  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
-  .btn.primary:hover{opacity:.87;}
-  .btn.danger{border-color:#e8b4b4;color:var(--pc1);}
-  .btn.danger:hover{background:var(--pc1-lt);}
+  .stats-row { display: flex; gap: 0.5rem; }
+  .stat { flex: 1; text-align: center; border: 1px solid #ddd; padding: 0.5rem 0.3rem; background: #fffff8; }
+  .stat-val { font-size: 1.1rem; color: #333; }
+  .stat-lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: #aaa; font-style: italic; margin-top: 0.1rem; }
 
-  .stats-row{display:flex;gap:7px;}
-  .stat{flex:1;text-align:center;border:1px solid var(--border);border-radius:6px;padding:8px 5px;background:var(--bg);}
-  .stat-val{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;color:var(--blue);}
-  .stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:2px;}
+  .hidden { display: none !important; }
+  .divider { height: 1px; background: #e0e0d8; margin: 0.8rem 0; }
 
-  .insight{border-left:3px solid var(--blue-mid);padding:9px 12px;background:var(--blue-lt);border-radius:0 6px 6px 0;font-size:12px;color:#2d3a50;line-height:1.65;font-style:italic;}
-  .insight strong{font-style:normal;color:var(--text);font-weight:500;}
+  /* Merged layout */
+  .merged-layout { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; gap: 1rem; }
+  .draw-panel { grid-column: 1; grid-row: 1/3; display: flex; flex-direction: column; gap: 0.7rem; }
+  .right-top  { grid-column: 2; grid-row: 1; }
+  .right-bottom { grid-column: 2; grid-row: 2; }
+  @media (max-width: 700px) {
+    .merged-layout { grid-template-columns: 1fr; }
+    .draw-panel, .right-top, .right-bottom { grid-column: 1; grid-row: auto; }
+  }
 
-  .hidden{display:none!important;}
-  .divider{height:1px;background:var(--border);margin:14px 0;}
-
-  /* ── merged layout ── */
-  .merged-layout{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:14px;}
-  .draw-panel{grid-column:1;grid-row:1/3;display:flex;flex-direction:column;gap:10px;}
-  .right-top{grid-column:2;grid-row:1;}
-  .right-bottom{grid-column:2;grid-row:2;}
-
-  /* spectrum bars */
-  .spec-bars{display:flex;align-items:flex-end;gap:4px;height:72px;padding:0 2px;}
-  .spec-bar-col{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0;}
-  .spec-bar{width:100%;border-radius:3px 3px 0 0;min-height:2px;transition:height .22s ease,background .22s;}
-  .spec-bar-lbl{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);}
+  /* Spectrum bars */
+  .spec-bars { display: flex; align-items: flex-end; gap: 3px; height: 72px; padding: 0 2px; }
+  .spec-bar-col { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; min-width: 0; }
+  .spec-bar { width: 100%; border-radius: 2px 2px 0 0; min-height: 2px; transition: height 0.22s ease, background 0.22s; }
+  .spec-bar-lbl { font-size: 0.7rem; color: #aaa; font-style: italic; }
 
   /* ED display */
-  .ed-big{font-family:'IBM Plex Mono',monospace;font-size:54px;font-weight:500;line-height:1;text-align:center;padding:10px 0 2px;transition:color .3s;}
-  .ed-sublabel{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);text-align:center;margin-bottom:8px;}
+  .ed-big { font-size: 3.5rem; font-weight: 400; line-height: 1; text-align: center; padding: 0.6rem 0 0.1rem; transition: color 0.3s; }
+  .ed-sublabel { font-size: 0.82rem; color: #aaa; font-style: italic; text-align: center; margin-bottom: 0.5rem; }
 
-  .formula-box{border:1px solid var(--border);border-radius:6px;padding:8px 12px;background:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:2;text-align:center;}
-  .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;gap:1px;}
-  .fnum{color:var(--blue);border-bottom:1.5px solid var(--border2);padding:0 4px 2px;}
-  .fden{color:var(--pc1);padding:2px 4px 0;}
-  .feq{color:var(--pc2);font-size:16px;font-weight:600;}
+  .formula-box {
+    border: 1px solid #ddd; padding: 0.5rem 0.8rem; background: #fffff8;
+    font-size: 0.85rem; line-height: 2; text-align: center; font-style: italic;
+  }
+  .frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; gap: 1px; }
+  .fnum { color: var(--blue); border-bottom: 1.5px solid #ccc; padding: 0 4px 2px; }
+  .fden { color: var(--pc1); padding: 2px 4px 0; }
+  .feq  { color: var(--pc2); font-size: 1.1rem; }
 
   /* 3D examples */
-  .examples-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-  .example-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg);}
-  .example-title{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:7px 11px 6px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;justify-content:space-between;align-items:center;}
-  .example-ed-badge{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--pc2);}
-  .example-canvas-wrap{position:relative;cursor:grab;}
-  .example-canvas-wrap:active{cursor:grabbing;}
-  .example-spectrum{padding:7px 11px 9px;border-top:1px solid var(--border);}
-  .mini-spectrum{display:flex;align-items:flex-end;gap:3px;height:32px;}
-  .mini-bar{flex:1;border-radius:2px 2px 0 0;min-height:2px;}
-  .mini-bar-lbl{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);text-align:center;margin-top:2px;}
+  .examples-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  @media (max-width: 700px) { .examples-grid { grid-template-columns: 1fr 1fr; } }
+  .example-card { border: 1px solid #ddd; overflow: hidden; background: #fffff8; }
+  .example-title {
+    font-size: 0.82rem; font-style: italic; color: #aaa;
+    padding: 0.35rem 0.8rem; border-bottom: 1px solid #ddd; background: #f4f4eb;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .example-ed-badge { font-size: 0.9rem; color: #234d23; font-style: normal; }
+  .example-canvas-wrap { position: relative; cursor: grab; }
+  .example-canvas-wrap:active { cursor: grabbing; }
+  .example-spectrum { padding: 0.4rem 0.6rem 0.6rem; border-top: 1px solid #ddd; }
+  .mini-spectrum { display: flex; align-items: flex-end; gap: 3px; height: 32px; }
+  .mini-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; }
+  .mini-bar-lbl { font-size: 0.7rem; color: #aaa; font-style: italic; text-align: center; margin-top: 2px; }
+
+  .footer { margin-top: 5rem; border-top: 1px solid #e0e0d8; padding-top: 1rem; font-size: 0.9rem; color: #bbb; font-style: italic; }
+  .footer a { color: #bbb; }
 </style>
 </head>
 <body>
 
-<div class="page-header">
-  <h1>Effective Dimensionality</h1>
-  <span class="subtitle">an interactive visual explainer</span>
-</div>
+<div class="content">
+  <a class="back" href="https://mayukhdeb.github.io/teaching/">&larr; teaching</a>
 
-<div class="container">
+  <h1>Effective Dimensionality</h1>
+  <p class="subtitle">an interactive visual explainer</p>
+
+  <hr>
 
   <div class="steps-nav">
-    <button class="step-btn active" onclick="goStep(0)">01 &nbsp;Explore</button>
-    <button class="step-btn"        onclick="goStep(1)">02 &nbsp;3D Examples</button>
+    <button class="step-btn active" onclick="goStep(0)">i.&nbsp; Explore</button>
+    <button class="step-btn"        onclick="goStep(1)">ii.&nbsp; 3D Examples</button>
   </div>
 
-  <!-- ═══ STEP 0 — merged explorer ═══ -->
-  <div class="card" id="step0">
-    <div class="card-top">
-      <div class="step-num">Step 01</div>
-      <div>
-        <h2>Draw data — watch dimensionality update live</h2>
-        <p>Click or drag to place points. The singular value spectrum and effective dimensionality react instantly as you draw.</p>
-      </div>
-    </div>
-    <div class="card-body">
+  <!-- STEP 0 — merged explorer -->
+  <div class="demo" id="step0">
+    <div class="demo-label">step 01 &mdash; draw data, watch dimensionality update live</div>
+    <div class="demo-body">
       <div class="merged-layout">
 
         <!-- LEFT: draw canvas + draw controls -->
@@ -137,107 +189,102 @@
             <div class="canvas-label">feature space</div>
           </div>
           <div class="ctrl-block">
-            <div class="ctrl-label">NOISE LEVEL <span id="noiseVal">medium</span></div>
+            <div class="ctrl-label">noise level <span id="noiseVal">medium</span></div>
             <input type="range" id="noiseSlider" min="0" max="2" step="1" value="1" oninput="updateNoiseLabel()">
           </div>
           <div class="ctrl-block">
-            <div class="ctrl-label">PRESETS</div>
+            <div class="ctrl-label">presets</div>
             <div class="btn-row">
-              <button class="btn primary" onclick="generatePreset('line')">Line</button>
-              <button class="btn primary" onclick="generatePreset('diagonal')">Diagonal</button>
-              <button class="btn primary" onclick="generatePreset('blob')">Blob</button>
+              <button class="primary" onclick="generatePreset('line')">Line</button>
+              <button class="primary" onclick="generatePreset('diagonal')">Diagonal</button>
+              <button class="primary" onclick="generatePreset('blob')">Blob</button>
             </div>
-            <div class="btn-row" style="margin-top:6px">
-              <button class="btn primary" onclick="generatePreset('circle')">Circle</button>
-              <button class="btn primary" onclick="generatePreset('cross')">Cross</button>
-              <button class="btn primary" onclick="generatePreset('ring')">Ring</button>
+            <div class="btn-row" style="margin-top:0.4rem">
+              <button class="primary" onclick="generatePreset('circle')">Circle</button>
+              <button class="primary" onclick="generatePreset('cross')">Cross</button>
+              <button class="primary" onclick="generatePreset('ring')">Ring</button>
             </div>
           </div>
           <div class="btn-row">
-            <button class="btn danger" onclick="clearPoints()">Clear</button>
-            <button class="btn" onclick="undoPoint()">Undo</button>
+            <button class="danger" onclick="clearPoints()">Clear</button>
+            <button onclick="undoPoint()">Undo</button>
           </div>
           <div class="stats-row">
             <div class="stat"><div class="stat-val" id="nPoints">0</div><div class="stat-lbl">Points</div></div>
-            <div class="stat"><div class="stat-val" id="s1val" style="font-size:13px">—</div><div class="stat-lbl">σ₁</div></div>
-            <div class="stat"><div class="stat-val" id="s2val" style="font-size:13px">—</div><div class="stat-lbl">σ₂</div></div>
+            <div class="stat"><div class="stat-val" id="s1val">—</div><div class="stat-lbl">&sigma;&#8321;</div></div>
+            <div class="stat"><div class="stat-val" id="s2val">—</div><div class="stat-lbl">&sigma;&#8322;</div></div>
           </div>
         </div>
 
         <!-- RIGHT TOP: singular value spectrum -->
         <div class="right-top">
-          <div class="ctrl-block" style="height:100%;display:flex;flex-direction:column;gap:10px;">
+          <div class="ctrl-block" style="height:100%;display:flex;flex-direction:column;gap:0.7rem;">
             <div>
-              <div class="ctrl-label">SINGULAR VALUE SPECTRUM</div>
+              <div class="ctrl-label">singular value spectrum</div>
               <div class="spec-bars" id="specBars">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--border2);margin:auto;">draw some points</div>
+                <div style="font-size:0.82rem;color:#ccc;font-style:italic;margin:auto;">draw some points</div>
               </div>
-              <div style="display:flex;gap:4px;margin-top:3px;" id="specLabels"></div>
+              <div style="display:flex;gap:3px;margin-top:3px;" id="specLabels"></div>
             </div>
             <div class="divider" style="margin:0;"></div>
             <div>
-              <div class="ctrl-label" style="margin-bottom:5px;">VARIANCE EXPLAINED</div>
-              <div id="varExplained" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);line-height:1.9;">—</div>
+              <div class="ctrl-label">variance explained</div>
+              <div id="varExplained" style="font-size:0.88rem;color:#aaa;font-style:italic;line-height:1.9;">—</div>
             </div>
             <div class="divider" style="margin:0;"></div>
-            <div class="insight" id="specInsight">Draw points to see the spectrum.</div>
+            <div class="callout" id="specInsight" style="margin:0">Draw points to see the spectrum.</div>
           </div>
         </div>
 
         <!-- RIGHT BOTTOM: effective dimensionality -->
         <div class="right-bottom">
-          <div class="ctrl-block" style="display:flex;flex-direction:column;gap:10px;">
-            <div class="ctrl-label" style="margin-bottom:0;">EFFECTIVE DIMENSIONALITY</div>
+          <div class="ctrl-block" style="display:flex;flex-direction:column;gap:0.7rem;">
+            <div class="ctrl-label" style="margin-bottom:0;">effective dimensionality</div>
 
-            <div class="ed-big" id="edBig" style="color:var(--muted);">—</div>
+            <div class="ed-big" id="edBig" style="color:#aaa;">—</div>
             <div class="ed-sublabel">out of max <span id="edMaxLabel">2</span></div>
 
             <div class="formula-box" id="edFormula">
               <span class="frac">
-                <span class="fnum">(Σ λᵢ)²</span>
-                <span class="fden">Σ λᵢ²</span>
+                <span class="fnum">(&Sigma; &lambda;&#7522;)&sup2;</span>
+                <span class="fden">&Sigma; &lambda;&#7522;&sup2;</span>
               </span>
               &nbsp;=&nbsp;<span class="feq" id="edFormulaVal">—</span>
             </div>
 
-            <!-- Mini ED landscape -->
-            <div style="border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+            <div style="border:1px solid #ddd;overflow:hidden;">
               <canvas id="edMiniCanvas" width="400" height="96"></canvas>
             </div>
 
-            <div class="insight" id="edInsight">Draw at least 4 points.</div>
+            <div class="callout" id="edInsight" style="margin:0">Draw at least 4 points.</div>
           </div>
         </div>
 
-      </div><!-- /merged-layout -->
+      </div>
 
-      <div style="margin-top:14px;">
-        <button class="btn primary" onclick="goStep(1)">See 3D examples →</button>
+      <div style="margin-top:1rem;">
+        <button class="primary" onclick="goStep(1)">See 3D examples &rarr;</button>
       </div>
     </div>
   </div>
 
-  <!-- ═══ STEP 1 — 3D examples ═══ -->
-  <div class="card hidden" id="step1">
-    <div class="card-top">
-      <div class="step-num">Step 02</div>
-      <div>
-        <h2>3D intuition: same features, different dimensionality</h2>
-        <p>Six clouds in ℝ³ — same number of features, very different effective dimensionalities. Drag to rotate, scroll to zoom.</p>
-      </div>
-    </div>
-    <div class="card-body">
+  <!-- STEP 1 — 3D examples -->
+  <div class="demo hidden" id="step1">
+    <div class="demo-label">step 02 &mdash; 3d intuition: same features, different dimensionality</div>
+    <div class="demo-body">
+      <p style="margin-top:0;margin-bottom:1rem;font-size:1rem;color:#666">Six clouds in &real;&sup3; — same number of features, very different effective dimensionalities. Drag to rotate, scroll to zoom.</p>
       <div class="examples-grid" id="examplesGrid"></div>
-      <div class="insight" style="margin-top:18px;">
-        <strong>Key insight:</strong> all six clouds live in ℝ³ — same number of features, same number of columns in the data matrix. Effective dimensionality ranges from <strong>1 to 3</strong> depending entirely on how variance is distributed. A flat eigenspectrum → high ED. A spiky one → low ED.
+      <div class="callout" style="margin-top:1.2rem;">
+        <strong>Key insight:</strong> all six clouds live in &real;&sup3; — same number of features, same number of columns in the data matrix. Effective dimensionality ranges from <strong>1 to 3</strong> depending entirely on how variance is distributed. A flat eigenspectrum &rarr; high ED. A spiky one &rarr; low ED.
       </div>
-      <div style="margin-top:12px;">
-        <button class="btn" onclick="goStep(0)">← Back to explorer</button>
+      <div style="margin-top:0.8rem;">
+        <button onclick="goStep(0)">&larr; Back to explorer</button>
       </div>
     </div>
   </div>
 
-</div><!-- /container -->
+  <div class="footer">Effective Dimensionality &mdash; <a href="https://mayukhdeb.github.io/teaching/">teaching</a></div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════════
@@ -246,10 +293,10 @@
 let points = [];
 
 const C = {
-  bg:'#ffffff', bg2:'#f7f8fb', border:'#e2e6ef', border2:'#cdd3e0',
-  text:'#111827', muted:'#8492a6',
-  blue:'#5b8dee', blueLt:'#dce8fc', blueMid:'#a8c4f5',
-  pc1:'#d94f4f', pc2:'#3aaa72', gold:'#c98a2e',
+  bg:'#fffff8', bg2:'#fafaf2', border:'#e0e0d8', border2:'#ccc',
+  text:'#111', muted:'#777',
+  blue:'#1e3d6e', blueLt:'#f0f0e8', blueMid:'#bbb',
+  pc1:'#7a1a1a', pc2:'#234d23', gold:'#6b500d',
 };
 const DPR = window.devicePixelRatio || 1;
 
@@ -257,7 +304,7 @@ const DPR = window.devicePixelRatio || 1;
 //  NAV
 // ══════════════════════════════════════════════════════════
 function goStep(n) {
-  document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
+  document.querySelectorAll('.demo').forEach(c => c.classList.add('hidden'));
   document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('step' + n).classList.remove('hidden');
   document.querySelectorAll('.step-btn')[n].classList.add('active');
@@ -328,7 +375,6 @@ function effectiveDim(eigenvalues) {
   return sqSum < 1e-14 ? 1 : sumSq/sqSum;
 }
 
-// Synthetic spectrum: 2 real sigmas + 6 decaying noise dims (stable, no random flicker)
 function buildSpectrum(res) {
   if (!res) return [];
   const { S } = res.svd;
@@ -378,7 +424,6 @@ function redrawPoints() {
     const [mx, my] = res.mean;
     const [cx, cy] = toPx(mx, my, DC.w, DC.h);
 
-    // Spread in pixel terms
     const allX=points.map(p=>p[0]), allY=points.map(p=>p[1]);
     const spreadX=Math.max(...allX)-Math.min(...allX);
     const spreadY=Math.max(...allY)-Math.min(...allY);
@@ -386,19 +431,17 @@ function redrawPoints() {
 
     const sc = Math.min(DC.w,DC.h)*0.44 / spread;
 
-    // Dashed ellipse
     const angle = -Math.atan2(U[1][0], U[0][0]);
     const rxPx = S[0]/spread * Math.min(DC.w,DC.h)*0.44;
     const ryPx = S[1]/spread * Math.min(DC.w,DC.h)*0.44;
     DC.ctx.save();
-    DC.ctx.strokeStyle='rgba(91,141,238,0.2)';
+    DC.ctx.strokeStyle='rgba(30,61,110,0.18)';
     DC.ctx.lineWidth=1.5; DC.ctx.setLineDash([5,4]);
     DC.ctx.beginPath();
     DC.ctx.ellipse(cx,cy,rxPx,ryPx,angle,0,Math.PI*2);
     DC.ctx.stroke(); DC.ctx.setLineDash([]);
     DC.ctx.restore();
 
-    // PC arrows
     [0,1].forEach(i => {
       const len = S[i]/spread * Math.min(DC.w,DC.h)*0.44;
       const vx=U[0][i], vy=U[1][i];
@@ -415,14 +458,13 @@ function redrawPoints() {
       DC.ctx.lineTo(ex-9*Math.cos(ang+0.4),ey-9*Math.sin(ang+0.4));
       DC.ctx.closePath(); DC.ctx.fill();
       DC.ctx.fillStyle=col+'cc';
-      DC.ctx.font=`600 11px "IBM Plex Mono",monospace`;
+      DC.ctx.font=`italic 11px et-book, Georgia, serif`;
       DC.ctx.textAlign='center'; DC.ctx.textBaseline='middle';
       DC.ctx.fillText(i===0?'σ₁':'σ₂', ex+14*Math.cos(ang), ey+14*Math.sin(ang));
       DC.ctx.textBaseline='alphabetic';
     });
   }
 
-  // Points
   DC.ctx.fillStyle = C.blue;
   points.forEach(([nx,ny])=>{
     const [x,y]=toPx(nx,ny,DC.w,DC.h);
@@ -451,7 +493,7 @@ function generatePreset(type) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  LIVE STATS — called every draw event
+//  LIVE STATS
 // ══════════════════════════════════════════════════════════
 let EDMiniDC = null;
 
@@ -461,11 +503,9 @@ function updateLiveStats() {
   const S   = res ? res.svd.S : null;
   const ev  = res ? res.svd.eigenvalues : null;
 
-  // ── σ values ──────────────────────────────────────────────
   document.getElementById('s1val').textContent = S ? S[0].toFixed(3) : '—';
   document.getElementById('s2val').textContent = S ? S[1].toFixed(3) : '—';
 
-  // ── Spectrum bars ─────────────────────────────────────────
   const sigmas = buildSpectrum(res);
   const barsEl  = document.getElementById('specBars');
   const labelsEl = document.getElementById('specLabels');
@@ -473,64 +513,61 @@ function updateLiveStats() {
   const specInsEl = document.getElementById('specInsight');
 
   if (!sigmas.length) {
-    barsEl.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--border2);margin:auto;">draw some points</div>`;
+    barsEl.innerHTML = `<div style="font-size:0.82rem;color:#ccc;font-style:italic;margin:auto;">draw some points</div>`;
     labelsEl.innerHTML = ''; varExEl.textContent='—';
     specInsEl.innerHTML='Draw points to see the spectrum.';
   } else {
-    const maxS=sigmas[0], barColors=[C.pc1,C.pc2,...Array(8).fill('#a8c4f5')];
+    const maxS=sigmas[0], barColors=[C.pc1,C.pc2,...Array(8).fill(C.blueMid)];
     barsEl.innerHTML = sigmas.map((s,i)=>`
       <div class="spec-bar-col">
         <div class="spec-bar" style="height:${Math.max(3,(s/maxS)*68)}px;background:${barColors[i]}"></div>
       </div>`).join('');
     labelsEl.innerHTML = sigmas.map((_,i)=>
-      `<div style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);text-align:center;">σ${i+1}</div>`).join('');
+      `<div style="flex:1;font-size:0.7rem;color:#aaa;font-style:italic;text-align:center;">&sigma;${i+1}</div>`).join('');
 
     const vT=sigmas.reduce((a,s)=>a+s**2,0);
     const v1=sigmas[0]**2/vT, v2=(sigmas[1]||0)**2/vT, vRest=1-v1-v2;
     varExEl.innerHTML =
-      `<span style="color:${C.pc1}">σ₁</span> ${(v1*100).toFixed(0)}%&nbsp;&nbsp;` +
-      `<span style="color:${C.pc2}">σ₂</span> ${(v2*100).toFixed(0)}%&nbsp;&nbsp;` +
-      `<span style="color:var(--muted)">rest ${(vRest*100).toFixed(0)}%</span>`;
+      `<span style="color:${C.pc1}">&sigma;&#8321;</span> ${(v1*100).toFixed(0)}%&nbsp;&nbsp;` +
+      `<span style="color:${C.pc2}">&sigma;&#8322;</span> ${(v2*100).toFixed(0)}%&nbsp;&nbsp;` +
+      `<span style="color:#aaa">rest ${(vRest*100).toFixed(0)}%</span>`;
 
     const r1=sigmas[0]**2/vT;
-    if      (r1>.9)  specInsEl.innerHTML=`σ₁ carries <strong>${(r1*100).toFixed(0)}%</strong> of variance — data is nearly <strong>one-dimensional</strong>.`;
-    else if (r1>.6)  specInsEl.innerHTML=`σ₁ carries <strong>${(r1*100).toFixed(0)}%</strong> — one dominant direction, but <strong>σ₂ still matters</strong>.`;
+    if      (r1>.9)  specInsEl.innerHTML=`&sigma;&#8321; carries <strong>${(r1*100).toFixed(0)}%</strong> of variance — data is nearly <strong>one-dimensional</strong>.`;
+    else if (r1>.6)  specInsEl.innerHTML=`&sigma;&#8321; carries <strong>${(r1*100).toFixed(0)}%</strong> — one dominant direction, but <strong>&sigma;&#8322; still matters</strong>.`;
     else             specInsEl.innerHTML=`Variance splits <strong>${(r1*100).toFixed(0)} / ${(v2*100).toFixed(0)}%</strong> — data is genuinely <strong>two-dimensional</strong>.`;
   }
 
-  // ── Effective dimensionality ──────────────────────────────
   const ed = ev ? effectiveDim(ev) : null;
   const edBigEl  = document.getElementById('edBig');
   const edInsEl  = document.getElementById('edInsight');
 
   if (ed === null) {
     edBigEl.textContent='—'; edBigEl.style.color=C.muted;
-    document.getElementById('edFormulaVal').textContent='—';
-    document.getElementById('edFormula').innerHTML=`<span class="frac"><span class="fnum">(Σ λᵢ)²</span><span class="fden">Σ λᵢ²</span></span>&nbsp;=&nbsp;<span class="feq">—</span>`;
+    document.getElementById('edFormula').innerHTML=`<span class="frac"><span class="fnum">(&Sigma; &lambda;&#7522;)&sup2;</span><span class="fden">&Sigma; &lambda;&#7522;&sup2;</span></span>&nbsp;=&nbsp;<span class="feq">—</span>`;
     edInsEl.innerHTML='Draw at least 4 points.';
   } else {
     edBigEl.textContent = ed.toFixed(2);
-    const t=ed-1; // 0..1
+    const t=ed-1;
     edBigEl.style.color = t<.35 ? C.pc1 : t<.65 ? C.gold : C.pc2;
 
     const sumSq=ev.reduce((s,v)=>s+v,0)**2;
     const sqSum=ev.reduce((s,v)=>s+v**2,0);
     document.getElementById('edFormula').innerHTML=`
       <span class="frac">
-        <span class="fnum">(${ev.map(v=>v.toFixed(3)).join(' + ')})² = ${sumSq.toFixed(3)}</span>
-        <span class="fden">${ev.map(v=>v.toFixed(3)+'²').join(' + ')} = ${sqSum.toFixed(4)}</span>
+        <span class="fnum">(${ev.map(v=>v.toFixed(3)).join(' + ')})&sup2; = ${sumSq.toFixed(3)}</span>
+        <span class="fden">${ev.map(v=>v.toFixed(3)+'&sup2;').join(' + ')} = ${sqSum.toFixed(4)}</span>
       </span>&nbsp;=&nbsp;<span class="feq">${ed.toFixed(2)}</span>`;
 
-    if      (ed<1.25) edInsEl.innerHTML=`ED ≈ <strong>${ed.toFixed(2)}</strong> — nearly <strong>one-dimensional</strong>. One singular value dominates; the data lives on a line.`;
-    else if (ed<1.6)  edInsEl.innerHTML=`ED ≈ <strong>${ed.toFixed(2)}</strong> — one dominant direction, but <strong>a real second component</strong> is present.`;
-    else if (ed<1.85) edInsEl.innerHTML=`ED ≈ <strong>${ed.toFixed(2)}</strong> — variance spread across <strong>both directions</strong> fairly evenly.`;
-    else              edInsEl.innerHTML=`ED ≈ <strong>${ed.toFixed(2)}</strong> — <strong>isotropic</strong>. All directions are used equally; dimensionality = d.`;
+    if      (ed<1.25) edInsEl.innerHTML=`ED &asymp; <strong>${ed.toFixed(2)}</strong> — nearly <strong>one-dimensional</strong>. One singular value dominates; the data lives on a line.`;
+    else if (ed<1.6)  edInsEl.innerHTML=`ED &asymp; <strong>${ed.toFixed(2)}</strong> — one dominant direction, but <strong>a real second component</strong> is present.`;
+    else if (ed<1.85) edInsEl.innerHTML=`ED &asymp; <strong>${ed.toFixed(2)}</strong> — variance spread across <strong>both directions</strong> fairly evenly.`;
+    else              edInsEl.innerHTML=`ED &asymp; <strong>${ed.toFixed(2)}</strong> — <strong>isotropic</strong>. All directions are used equally; dimensionality = d.`;
   }
 
   drawEDMiniCurve(ed);
 }
 
-// Mini ED landscape with live dot
 function drawEDMiniCurve(currentED) {
   if (!EDMiniDC) EDMiniDC = prepCanvas('edMiniCanvas', 400, 96);
   const { ctx, w, h } = EDMiniDC;
@@ -539,7 +576,6 @@ function drawEDMiniCurve(currentED) {
   const pad={l:34,r:12,t:10,b:20};
   const pw=w-pad.l-pad.r, ph=h-pad.t-pad.b;
 
-  // Curve
   ctx.beginPath();
   for (let i=0;i<=200;i++){
     const ti=i/200;
@@ -550,23 +586,20 @@ function drawEDMiniCurve(currentED) {
   }
   ctx.strokeStyle=C.blueMid; ctx.lineWidth=2; ctx.stroke();
   ctx.lineTo(pad.l+pw,pad.t+ph); ctx.lineTo(pad.l,pad.t+ph); ctx.closePath();
-  ctx.fillStyle='rgba(91,141,238,0.07)'; ctx.fill();
+  ctx.fillStyle='rgba(30,61,110,0.07)'; ctx.fill();
 
-  // Grid lines + labels
   [[1,'1'],[1.5,'1.5'],[2,'2']].forEach(([v,lbl])=>{
     const y=pad.t+ph*(1-(v-1));
     ctx.strokeStyle=C.border; ctx.lineWidth=0.5; ctx.setLineDash([3,3]);
     ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+pw,y); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle=C.muted; ctx.font=`8px "IBM Plex Mono",monospace`;
+    ctx.fillStyle=C.muted; ctx.font=`italic 8px et-book, Georgia, serif`;
     ctx.textAlign='right'; ctx.fillText(lbl,pad.l-3,y+3);
   });
-  ctx.fillStyle=C.muted; ctx.font=`8px "IBM Plex Mono",monospace`; ctx.textAlign='center';
+  ctx.fillStyle=C.muted; ctx.font=`italic 8px et-book, Georgia, serif`; ctx.textAlign='center';
   ctx.fillText('blob',pad.l+6,h-3); ctx.fillText('line',pad.l+pw-6,h-3);
 
-  // Current point
   if (currentED !== null) {
-    // Find t on curve via binary search
     let lo=0,hi=1;
     for(let i=0;i<30;i++){
       const m=(lo+hi)/2;
@@ -575,15 +608,13 @@ function drawEDMiniCurve(currentED) {
     }
     const t=(lo+hi)/2;
     const curX=pad.l+t*pw, curY=pad.t+ph*(1-(currentED-1));
-    // Guide lines
     ctx.strokeStyle=C.border2; ctx.lineWidth=0.8; ctx.setLineDash([3,3]);
     ctx.beginPath(); ctx.moveTo(curX,pad.t); ctx.lineTo(curX,pad.t+ph); ctx.stroke();
     ctx.setLineDash([]);
-    // Dot
     const dotCol = currentED<1.35?C.pc1:currentED<1.65?C.gold:C.pc2;
     ctx.fillStyle=dotCol;
     ctx.beginPath(); ctx.arc(curX,curY,5,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#fff'; ctx.font=`600 7px "IBM Plex Mono",monospace`;
+    ctx.fillStyle='#fffff8'; ctx.font=`italic 7px et-book, Georgia, serif`;
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(currentED.toFixed(1),curX,curY);
     ctx.textBaseline='alphabetic';
@@ -678,16 +709,16 @@ function initExamples(){
       </div>
       <div class="example-canvas-wrap" id="wrap${i}" title="Drag · scroll to zoom">
         <canvas id="exCanvas${i}" width="280" height="190" style="display:block;width:100%;"></canvas>
-        <div style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--border2);pointer-events:none;white-space:nowrap;">drag · scroll to zoom</div>
+        <div style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:0.7rem;color:#ccc;font-style:italic;pointer-events:none;white-space:nowrap;">drag &middot; scroll to zoom</div>
       </div>
       <div class="example-spectrum">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:3px;letter-spacing:.06em;">EIGENSPECTRUM</div>
+        <div style="font-size:0.75rem;color:#aaa;font-style:italic;margin-bottom:3px;">eigenspectrum</div>
         <div style="display:flex;gap:5px;align-items:flex-end;">
           <div style="flex:1;">
             <div class="mini-spectrum" id="spec${i}"></div>
-            <div style="display:flex;gap:3px;">${ev.map((_,j)=>`<div class="mini-bar-lbl" style="flex:1;">λ${j+1}</div>`).join('')}</div>
+            <div style="display:flex;gap:3px;">${ev.map((_,j)=>`<div class="mini-bar-lbl" style="flex:1;">&lambda;${j+1}</div>`).join('')}</div>
           </div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;line-height:1.7;text-align:right;">
+          <div style="font-size:0.82rem;line-height:1.7;text-align:right;font-style:italic;">
             ${ev.map((v,j)=>`<span style="color:${[C.pc1,C.pc2,C.blue][j]}">${v.toFixed(3)}</span>`).join('<br>')}
           </div>
         </div>
@@ -698,7 +729,6 @@ function initExamples(){
     document.getElementById(`spec${i}`).innerHTML=
       ev.map((v,j)=>`<div class="mini-bar" style="height:${Math.max(3,(v/maxEV)*30)}px;background:${[C.pc1,C.pc2,C.blue][j]};"></div>`).join('');
 
-    // Interaction
     let drag=null,pinchDist=null;
     const wrap=card.querySelector(`#wrap${i}`);
     wrap.addEventListener('mousedown',e=>{exDragging=i;drag={x:e.clientX,y:e.clientY};e.preventDefault();});
@@ -752,12 +782,11 @@ function drawExample(i){
   const withD=proj.map(p=>({px:p[0],py:p[1],depth:p[2]}));
   withD.sort((a,b)=>a.depth-b.depth);
 
-  // Axes
-  const axLen=.90,axCol='#111827';
+  const axLen=.90;
   const axDefs=[
-    {vec:[axLen,0,0],neg:[-axLen*.22,0,0],col:axCol,label:'X'},
-    {vec:[0,axLen,0],neg:[0,-axLen*.22,0],col:axCol,label:'Y'},
-    {vec:[0,0,axLen],neg:[0,0,-axLen*.22],col:axCol,label:'Z'},
+    {vec:[axLen,0,0],neg:[-axLen*.22,0,0],col:'#333',label:'X'},
+    {vec:[0,axLen,0],neg:[0,-axLen*.22,0],col:'#333',label:'Y'},
+    {vec:[0,0,axLen],neg:[0,0,-axLen*.22],col:'#333',label:'Z'},
   ];
   const axWD=axDefs.map(ax=>{const[,,pz]=project3D(...ax.vec,rx,ry);return{...ax,depth:pz};});
   axWD.sort((a,b)=>a.depth-b.depth);
@@ -765,26 +794,25 @@ function drawExample(i){
     const[px2,py2]=project3D(...vec,rx,ry);
     const[nx2,ny2]=project3D(...neg,rx,ry);
     const ex=cx+px2*sc,ey=cy-py2*sc,ox=cx+nx2*sc,oy=cy-ny2*sc;
-    ctx.strokeStyle='rgba(17,24,39,.22)';ctx.lineWidth=1;ctx.setLineDash([3,4]);
+    ctx.strokeStyle='rgba(17,17,17,.15)';ctx.lineWidth=1;ctx.setLineDash([3,4]);
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ox,oy);ctx.stroke();ctx.setLineDash([]);
-    ctx.strokeStyle=col;ctx.lineWidth=2;
+    ctx.strokeStyle=col;ctx.lineWidth=1.5;
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ex,ey);ctx.stroke();
     const ang=Math.atan2(ey-cy,ex-cx);
     ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(ex,ey);
-    ctx.lineTo(ex-9*Math.cos(ang-.42),ey-9*Math.sin(ang-.42));
-    ctx.lineTo(ex-9*Math.cos(ang+.42),ey-9*Math.sin(ang+.42));
+    ctx.lineTo(ex-8*Math.cos(ang-.42),ey-8*Math.sin(ang-.42));
+    ctx.lineTo(ex-8*Math.cos(ang+.42),ey-8*Math.sin(ang+.42));
     ctx.closePath();ctx.fill();
-    ctx.fillStyle=col;ctx.font=`600 11px "IBM Plex Mono",monospace`;
+    ctx.fillStyle=col;ctx.font=`italic 10px et-book, Georgia, serif`;
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(label,ex+14*Math.cos(ang),ey+14*Math.sin(ang));
+    ctx.fillText(label,ex+12*Math.cos(ang),ey+12*Math.sin(ang));
   });
 
-  // Points
   const minD=Math.min(...withD.map(p=>p.depth)),maxD=Math.max(...withD.map(p=>p.depth));
   const dRange=Math.max(maxD-minD,.01);
   withD.forEach(({px:px2,py:py2,depth})=>{
     const t=(depth-minD)/dRange;
-    ctx.fillStyle=`rgba(${Math.round(60+t*31)},${Math.round(130+t*11)},${Math.round(220+t*15)},${.32+t*.52})`;
+    ctx.fillStyle=`rgba(${Math.round(20+t*40)},${Math.round(50+t*30)},${Math.round(90+t*20)},${.25+t*.55})`;
     ctx.beginPath();ctx.arc(cx+px2*sc,cy-py2*sc,1.8+t*1.4,0,Math.PI*2);ctx.fill();
   });
   ctx.textBaseline='alphabetic';
